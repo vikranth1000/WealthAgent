@@ -92,6 +92,7 @@ class ChatMessageResponse(BaseModel):
 
 
 class ChatRequest(BaseModel):
+    client_id: str
     message: str
     persona: str
 

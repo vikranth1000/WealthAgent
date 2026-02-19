@@ -30,6 +30,8 @@ from analytics.portfolio import (
 from api.schemas import (
     ChatHistoryResponse,
     ChatMessageResponse,
+    ChatRequest,
+    ChatResponse,
     ClientListResponse,
     ClientResponse,
     PortfolioResponse,
@@ -271,3 +273,87 @@ async def delete_chat_history(
 
     await db.execute(delete(ChatMessage).where(ChatMessage.client_id == client_id))
     await db.commit()
+
+
+# ---------------------------------------------------------------------------
+# POST /api/chat — non-streaming fallback
+# ---------------------------------------------------------------------------
+
+
+@router.post("/chat", response_model=ChatResponse)
+async def post_chat(
+    body: ChatRequest,
+    db: AsyncSession = Depends(get_db),
+) -> ChatResponse:
+    """Non-streaming chat endpoint. Runs the full orchestrator pipeline.
+
+    Args:
+        body: ChatRequest with client_id, message, and persona.
+        db: Async database session.
+
+    Returns:
+        ChatResponse with the assistant's message.
+    """
+    from agents.orchestrator import run_orchestrator
+
+    # We need client_id from the request — add it to ChatRequest or accept it
+    # For now, require client_id in the body
+    client_id = getattr(body, "client_id", None)
+    if not client_id:
+        raise HTTPException(status_code=400, detail="client_id is required")
+
+    client_result = await db.execute(select(Client).where(Client.id == client_id))
+    if client_result.scalar_one_or_none() is None:
+        raise HTTPException(status_code=404, detail=f"Client {client_id!r} not found")
+
+    # Load chat history
+    history_result = await db.execute(
+        select(ChatMessage)
+        .where(ChatMessage.client_id == client_id)
+        .order_by(ChatMessage.timestamp.desc())
+        .limit(20)
+    )
+    history_msgs = history_result.scalars().all()
+    chat_history = [
+        {"role": m.role, "content": m.content}
+        for m in reversed(history_msgs)
+    ]
+
+    # Save user message
+    user_msg = ChatMessage(
+        client_id=client_id,
+        role="user",
+        content=body.message,
+    )
+    db.add(user_msg)
+    await db.commit()
+
+    # Run orchestrator
+    final_state = await run_orchestrator(
+        client_id=client_id,
+        query=body.message,
+        persona=body.persona,
+        chat_history=chat_history,
+    )
+
+    # Extract response
+    report = final_state.get("client_report")
+    response_text = ""
+    if report:
+        response_text = report.get("executive_summary", "")
+    if not response_text:
+        response_text = "I'm sorry, I couldn't generate a response. Please try again."
+
+    agent = final_state.get("current_agent")
+
+    # Save assistant message
+    assistant_msg = ChatMessage(
+        client_id=client_id,
+        role="assistant",
+        content=response_text,
+        agent=agent,
+    )
+    db.add(assistant_msg)
+    await db.commit()
+
+    return ChatResponse(message=response_text, agent=agent)

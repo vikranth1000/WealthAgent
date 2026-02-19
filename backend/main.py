@@ -8,6 +8,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from api.routes import router
+from api.websocket import ws_router
 from config import settings
 from data.database import AsyncSessionLocal, create_tables
 from data.seed import seed_database
@@ -41,6 +42,7 @@ app.add_middleware(
 
 
 app.include_router(router)
+app.include_router(ws_router)
 
 
 @app.get("/api/health")
