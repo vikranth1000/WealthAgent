@@ -1,35 +1,45 @@
-import { X, BarChart2, PieChart, TrendingUp, Table } from 'lucide-react'
+import { X } from 'lucide-react'
+import { usePortfolio } from '../../hooks/usePortfolio.js'
+import MetricCards from '../Dashboard/MetricCards.jsx'
+import AllocationChart from '../Dashboard/AllocationChart.jsx'
+import PerformanceChart from '../Dashboard/PerformanceChart.jsx'
+import SectorChart from '../Dashboard/SectorChart.jsx'
+import HoldingsTable from '../Dashboard/HoldingsTable.jsx'
 
-function PlaceholderChart({ icon: Icon, label, height = 'h-32' }) {
+function Section({ title, children }) {
   return (
-    <div className={`${height} flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 text-gray-400`}>
-      <Icon size={22} className="mb-1.5" />
-      <span className="text-xs font-medium">{label}</span>
+    <div>
+      <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+        {title}
+      </h3>
+      {children}
     </div>
   )
 }
 
-function MetricCard({ label, value, sub }) {
-  return (
-    <div className="bg-white rounded-lg border border-gray-200 px-3 py-2.5">
-      <p className="text-xs text-gray-500">{label}</p>
-      <p className="text-base font-bold text-navy mt-0.5">{value}</p>
-      {sub && <p className="text-xs text-gray-400 mt-0.5">{sub}</p>}
-    </div>
-  )
-}
-
+// analysis shape: { total_value, total_return, current_allocation, target_allocation,
+//                   sector_breakdown, sharpe_ratio, sortino_ratio, max_drawdown, volatility }
+// portfolio shape: { holdings: [...] }
 export default function RightPanel({ client, isOpen, onClose }) {
+  const { portfolio, analysis, loading, error } = usePortfolio(client?.id)
+
   if (!isOpen) return null
+
+  const metrics = analysis
+    ? {
+        totalValue: analysis.total_value,
+        ytdReturn: analysis.total_return,
+        sharpe: analysis.sharpe_ratio,
+        maxDrawdown: analysis.max_drawdown,
+      }
+    : {}
 
   return (
     <aside className="w-80 shrink-0 flex flex-col bg-light-gray border-l border-gray-200 overflow-hidden">
       <div className="flex items-center justify-between px-4 py-3 bg-white border-b border-gray-200 shrink-0">
         <div>
           <h2 className="text-sm font-semibold text-navy">Portfolio Dashboard</h2>
-          {client && (
-            <p className="text-xs text-gray-500 mt-0.5">{client.name}</p>
-          )}
+          {client && <p className="text-xs text-gray-500 mt-0.5">{client.name}</p>}
         </div>
         <button
           onClick={onClose}
@@ -40,46 +50,39 @@ export default function RightPanel({ client, isOpen, onClose }) {
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        <div className="grid grid-cols-2 gap-2">
-          <MetricCard
-            label="Total Value"
-            value={client?.totalValue ?? '—'}
-            sub="As of today"
-          />
-          <MetricCard label="YTD Return" value="—" sub="Loading…" />
-          <MetricCard label="Sharpe Ratio" value="—" sub="12-month" />
-          <MetricCard label="Max Drawdown" value="—" sub="12-month" />
+      {loading && (
+        <div className="flex-1 flex items-center justify-center text-gray-400 text-sm">
+          Loading portfolio…
         </div>
+      )}
 
-        <div>
-          <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-            Asset Allocation
-          </h3>
-          <PlaceholderChart icon={PieChart} label="Donut chart — current vs. target" />
+      {!loading && error && (
+        <div className="flex-1 flex items-center justify-center text-red-400 text-sm px-4 text-center">
+          {error}
         </div>
+      )}
 
-        <div>
-          <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-            Performance
-          </h3>
-          <PlaceholderChart icon={TrendingUp} label="Line chart — portfolio vs. benchmark" />
-        </div>
+      {!loading && !error && (
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          <MetricCards metrics={metrics} />
 
-        <div>
-          <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-            Sector Exposure
-          </h3>
-          <PlaceholderChart icon={BarChart2} label="Bar chart — sector breakdown" height="h-24" />
-        </div>
+          <Section title="Asset Allocation">
+            <AllocationChart data={analysis?.current_allocation} />
+          </Section>
 
-        <div>
-          <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-            Holdings
-          </h3>
-          <PlaceholderChart icon={Table} label="Sortable holdings table" height="h-24" />
+          <Section title="Performance">
+            <PerformanceChart data={[]} />
+          </Section>
+
+          <Section title="Sector Exposure">
+            <SectorChart data={analysis?.sector_breakdown} />
+          </Section>
+
+          <Section title="Holdings">
+            <HoldingsTable holdings={portfolio?.holdings} />
+          </Section>
         </div>
-      </div>
+      )}
 
       <div className="px-4 py-2 border-t border-gray-200 bg-white shrink-0">
         <p className="text-xs text-gray-400 text-center">

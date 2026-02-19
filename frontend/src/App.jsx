@@ -6,7 +6,7 @@ import ChatWindow from './components/Chat/ChatWindow.jsx'
 
 export const CLIENTS = [
   {
-    id: 'c1',
+    id: '11111111-1111-1111-1111-111111111111',
     name: 'Margaret Chen',
     persona: 'conservative_retiree',
     personaLabel: 'Conservative Retiree',
@@ -18,7 +18,7 @@ export const CLIENTS = [
     avatarColor: 'bg-blue-600',
   },
   {
-    id: 'c2',
+    id: '22222222-2222-2222-2222-222222222222',
     name: 'Alex Rodriguez',
     persona: 'aggressive_growth',
     personaLabel: 'Aggressive Growth',
@@ -30,7 +30,7 @@ export const CLIENTS = [
     avatarColor: 'bg-orange-500',
   },
   {
-    id: 'c3',
+    id: '33333333-3333-3333-3333-333333333333',
     name: 'Priya Sharma',
     persona: 'young_professional',
     personaLabel: 'Young Professional',
@@ -42,7 +42,7 @@ export const CLIENTS = [
     avatarColor: 'bg-purple-500',
   },
   {
-    id: 'c4',
+    id: '44444444-4444-4444-4444-444444444444',
     name: 'Meridian Capital',
     persona: 'institutional',
     personaLabel: 'Institutional',

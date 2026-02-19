@@ -11,6 +11,13 @@ export function useWebSocket(clientId) {
   const [isConnected, setIsConnected] = useState(false)
   const reconnectTimer = useRef(null)
   const retryDelay = useRef(1000)
+  const shouldReconnect = useRef(true)
+
+  // Reset chat state when client switches
+  useEffect(() => {
+    setMessages([])
+    setActiveAgent(null)
+  }, [clientId])
 
   const connect = useCallback(() => {
     if (!clientId) return
@@ -24,10 +31,12 @@ export function useWebSocket(clientId) {
 
     socket.onclose = () => {
       setIsConnected(false)
-      reconnectTimer.current = setTimeout(() => {
-        retryDelay.current = Math.min(retryDelay.current * 2, 8000)
-        connect()
-      }, retryDelay.current)
+      if (shouldReconnect.current) {
+        reconnectTimer.current = setTimeout(() => {
+          retryDelay.current = Math.min(retryDelay.current * 2, 8000)
+          connect()
+        }, retryDelay.current)
+      }
     }
 
     socket.onmessage = (event) => {
@@ -53,6 +62,16 @@ export function useWebSocket(clientId) {
             i === prev.length - 1 ? { ...m, streaming: false, report: data.report } : m
           )
         )
+      } else if (data.type === 'error') {
+        setActiveAgent(null)
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: 'assistant',
+            content: data.message ?? 'An error occurred. Please try again.',
+            error: true,
+          },
+        ])
       }
     }
 
@@ -60,8 +79,10 @@ export function useWebSocket(clientId) {
   }, [clientId])
 
   useEffect(() => {
+    shouldReconnect.current = true
     connect()
     return () => {
+      shouldReconnect.current = false
       clearTimeout(reconnectTimer.current)
       ws.current?.close()
     }
