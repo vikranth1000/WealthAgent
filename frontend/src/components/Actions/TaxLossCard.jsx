@@ -111,7 +111,7 @@ export default function TaxLossCard({ data, onClose, onAskAI }) {
         )}
 
         <button
-          onClick={() => onAskAI?.('Analyze my tax-loss harvesting opportunities. Which positions should I harvest first? Are there any wash sale risks? Suggest replacement securities to maintain similar exposure.')}
+          onClick={() => onAskAI?.('Analyze this client\'s tax-loss harvesting opportunities. Which positions should be harvested first? Are there any wash sale risks? Suggest replacement securities to maintain similar exposure.')}
           className="flex w-full items-center justify-center gap-2 rounded-xl bg-navy py-2.5 text-xs font-semibold text-white transition-colors hover:bg-navy/90"
         >
           <Sparkles size={13} />

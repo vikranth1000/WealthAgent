@@ -130,7 +130,7 @@ export default function RebalancingCard({ data, onClose, onAskAI }) {
         )}
 
         <button
-          onClick={() => onAskAI?.('Analyze my portfolio rebalancing needs. Review the current vs target allocation drift and suggest which trades to prioritize first, considering tax implications and transaction costs.')}
+          onClick={() => onAskAI?.('Analyze this client\'s rebalancing needs. Review the current vs target allocation drift and suggest which trades to prioritize first, considering tax implications and transaction costs.')}
           className="flex w-full items-center justify-center gap-2 rounded-xl bg-navy py-2.5 text-xs font-semibold text-white transition-colors hover:bg-navy/90"
         >
           <Sparkles size={13} />

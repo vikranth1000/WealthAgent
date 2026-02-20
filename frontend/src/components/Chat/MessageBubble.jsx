@@ -125,9 +125,30 @@ function renderMarkdown(content) {
   return elements
 }
 
+import { cloneElement } from 'react'
+
+const cursor = (
+  <span className="ml-1 inline-block h-4 w-0.5 animate-pulse rounded-full bg-teal align-text-bottom" />
+)
+
+function appendCursor(elements) {
+  if (!elements.length) return [cursor]
+  const last = elements[elements.length - 1]
+  // Append cursor inside the last block element so it stays inline with text
+  if (last && last.props?.children != null) {
+    const children = Array.isArray(last.props.children) ? last.props.children : [last.props.children]
+    const patched = cloneElement(last, {}, ...children, cursor)
+    return [...elements.slice(0, -1), patched]
+  }
+  return [...elements, cursor]
+}
+
 // Props: role ('user' | 'assistant'), content (string), streaming (bool), error (bool)
 export default function MessageBubble({ role, content, streaming, error }) {
   const isUser = role === 'user'
+
+  let rendered = isUser ? null : renderMarkdown(content)
+  if (streaming && rendered) rendered = appendCursor(rendered)
 
   return (
     <div className={`mb-3 flex ${isUser ? 'justify-end' : 'justify-start'}`}>
@@ -141,10 +162,7 @@ export default function MessageBubble({ role, content, streaming, error }) {
                 : 'rounded-2xl rounded-bl-md border border-gray-200 bg-white text-gray-800'
           }`}
         >
-          {isUser ? content : renderMarkdown(content)}
-          {streaming && (
-            <span className="ml-1 inline-block h-4 w-0.5 animate-pulse rounded-full bg-teal align-text-bottom" />
-          )}
+          {isUser ? content : rendered}
         </div>
       </div>
     </div>

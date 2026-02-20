@@ -97,7 +97,7 @@ export default function StressTestCard({ allocation, totalValue, onClose, onAskA
         })}
 
         <button
-          onClick={() => onAskAI?.('Run a stress test analysis on my portfolio. Which scenarios pose the greatest risk? What hedging strategies or allocation changes would improve resilience?')}
+          onClick={() => onAskAI?.('Run a stress test analysis on this client\'s portfolio. Which scenarios pose the greatest risk? What hedging strategies or allocation changes would improve resilience?')}
           className="flex w-full items-center justify-center gap-2 rounded-xl bg-navy py-2.5 text-xs font-semibold text-white transition-colors hover:bg-navy/90"
         >
           <Sparkles size={13} />
