@@ -2,7 +2,6 @@
 
 Multi-agent AI wealth management assistant that delivers persona-adapted financial insights through a conversational interface with an integrated portfolio dashboard.
 
-Built as a portfolio project for **State Street Wealth R&D Co-op**.
 
 ## Architecture
 
