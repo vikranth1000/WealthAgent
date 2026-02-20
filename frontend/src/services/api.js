@@ -9,6 +9,7 @@ async function request(path, options = {}) {
     const text = await res.text()
     throw new Error(`HTTP ${res.status}: ${text}`)
   }
+  if (res.status === 204) return null
   return res.json()
 }
 
