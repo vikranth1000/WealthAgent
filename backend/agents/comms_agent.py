@@ -429,8 +429,12 @@ async def comms_agent_stream(
 # ---------------------------------------------------------------------------
 
 _SUGGESTIONS_SYSTEM = """\
-You generate 3 short follow-up questions a financial advisor might ask next, \
-given the conversation context. Output ONLY a JSON array of 3 strings. \
+You generate 3 short follow-up questions for a wealth management advisor \
+who is analyzing a client's portfolio. The advisor is NOT the client — \
+they manage the client. Phrase questions from the advisor's perspective, \
+referring to the client in the third person (e.g. "their", "this portfolio", \
+"the client's"). NEVER use "my" or "I" as if the user is the client. \
+Output ONLY a JSON array of 3 strings. \
 Each question should be under 60 characters. No explanation, no markdown.\
 """
 
@@ -458,9 +462,11 @@ async def generate_follow_up_suggestions(
 
     user_msg = (
         f"Persona: {persona}\n"
-        f"User asked: {query}\n"
+        f"Advisor asked: {query}\n"
         f"AI responded (summary): {response_summary[:300]}\n\n"
-        "Generate 3 follow-up questions as a JSON array."
+        "Generate 3 follow-up questions the advisor might ask next about "
+        "this client's portfolio. Use third-person language (their/the client's). "
+        "JSON array only."
     )
 
     try:
