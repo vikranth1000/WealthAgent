@@ -21,6 +21,12 @@ class Settings(BaseSettings):
 
 settings = Settings()
 
+# Normalise DATABASE_URL for async SQLAlchemy drivers
+if settings.database_url.startswith("postgresql://"):
+    settings.database_url = settings.database_url.replace(
+        "postgresql://", "postgresql+asyncpg://", 1
+    )
+
 logging.basicConfig(
     level=getattr(logging, settings.log_level.upper(), logging.INFO),
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
