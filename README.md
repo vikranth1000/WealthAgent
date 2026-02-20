@@ -27,30 +27,30 @@
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                   React Frontend                         │
-│  Chat UI  │  AI Tools  │  Dashboard  │  Persona Selector │
-└──────────────────────┬──────────────────────────────────┘
-                       │ WebSocket (streaming) + REST
-┌──────────────────────▼──────────────────────────────────┐
-│                   FastAPI Backend                         │
-│                                                          │
-│  ┌─────────────────────────────────────────────────┐    │
-│  │           LangGraph Orchestrator                 │    │
-│  │                                                  │    │
-│  │  route_query (intent classification)             │    │
-│  │    ├─ "portfolio"  → Portfolio Agent → Comms     │    │
-│  │    ├─ "market"     → Portfolio → Market → Comms  │    │
-│  │    └─ "full_review"→ Portfolio → Market → Comms  │    │
-│  └─────────────────────────────────────────────────┘    │
-│                                                          │
-│  ┌──────────────┐  ┌─────────────┐  ┌───────────────┐  │
-│  │  analytics/   │  │ Claude API  │  │   yfinance    │  │
-│  │  (pure math)  │  │   (LLM)     │  │ (market data) │  │
-│  └──────────────┘  └─────────────┘  └───────────────┘  │
-│                                                          │
-│  PostgreSQL / SQLite                                     │
-└─────────────────────────────────────────────────────────┘
+      ┌─────────────────────────────────────────────────────────┐
+      │                   React Frontend                        │
+      │  Chat UI  │  AI Tools  │  Dashboard  │  Persona Selector│
+      └──────────────────────┬──────────────────────────────────┘
+                             │ WebSocket (streaming) + REST
+      ┌──────────────────────▼──────────────────────────────────┐
+      │                   FastAPI Backend                       │
+      │                                                         │
+      │  ┌─────────────────────────────────────────────────┐    │
+      │  │           LangGraph Orchestrator                │    │
+      │  │                                                 │    │ 
+      │  │  route_query (intent classification)            │    │
+      │  │    ├─ "portfolio"  → Portfolio Agent → Comms    │    │
+      │  │    ├─ "market"     → Portfolio → Market → Comms │    │
+      │  │    └─ "full_review"→ Portfolio → Market → Comms │    │
+      │  └─────────────────────────────────────────────────┘    │
+      │                                                         │
+      │  ┌──────────────┐  ┌─────────────┐  ┌───────────────┐   │
+      │  │  analytics/  │  │ Claude API  │  │   yfinance    │   │
+      │  │  (pure math) │  │   (LLM)     │  │ (market data) │   │
+      │  └──────────────┘  └─────────────┘  └───────────────┘   │
+      │                                                         │
+      │  PostgreSQL / SQLite                                    │
+      └─────────────────────────────────────────────────────────┘
 ```
 
 ### Agent Flow
