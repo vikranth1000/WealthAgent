@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect } from 'react'
-import { MessageSquare } from 'lucide-react'
+import { useState, useRef, useEffect, useCallback } from 'react'
+import { MessageSquare, Trash2, Undo2 } from 'lucide-react'
 import { useWebSocket } from '../../hooks/useWebSocket'
 import { usePortfolio } from '../../hooks/usePortfolio'
 import MessageBubble from './MessageBubble'
@@ -10,10 +10,12 @@ import ActionToolbar from '../Actions/ActionToolbar'
 import ActionPanel from '../Actions/ActionPanel'
 
 export default function ChatWindow({ client }) {
-  const { send, stop, messages, activeAgent, isConnected, suggestions } = useWebSocket(client?.id)
+  const { send, stop, messages, activeAgent, isConnected, suggestions, clearChat } = useWebSocket(client?.id)
   const { analysis } = usePortfolio(client?.id)
   const [input, setInput] = useState('')
   const [activeAction, setActiveAction] = useState(null)
+  const [undoRestore, setUndoRestore] = useState(null)
+  const undoTimerRef = useRef(null)
   const bottomRef = useRef(null)
 
   useEffect(() => {
@@ -24,7 +26,23 @@ export default function ChatWindow({ client }) {
   useEffect(() => {
     setInput('')
     setActiveAction(null)
+    setUndoRestore(null)
+    clearTimeout(undoTimerRef.current)
   }, [client?.id])
+
+  const handleClearChat = useCallback(async () => {
+    const restoreFn = await clearChat()
+    if (!restoreFn) return
+    setUndoRestore(() => restoreFn)
+    clearTimeout(undoTimerRef.current)
+    undoTimerRef.current = setTimeout(() => setUndoRestore(null), 5000)
+  }, [clearChat])
+
+  const handleUndo = useCallback(() => {
+    undoRestore?.()
+    setUndoRestore(null)
+    clearTimeout(undoTimerRef.current)
+  }, [undoRestore])
 
   function handleSend(text) {
     const msg = (text ?? input).trim()
@@ -41,15 +59,41 @@ export default function ChatWindow({ client }) {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Connection status */}
-      <div className="flex items-center gap-2 px-4 py-2 border-b border-gray-100 bg-gray-50/70 shrink-0">
-        <span
-          className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-emerald-500' : 'bg-rose-400'}`}
-        />
-        <span className="text-xs font-medium text-gray-500">
-          {isConnected ? 'Connected' : 'Reconnecting\u2026'}
-        </span>
+      {/* Connection status + clear chat */}
+      <div className="flex items-center justify-between px-4 py-2 border-b border-gray-100 bg-gray-50/70 shrink-0">
+        <div className="flex items-center gap-2">
+          <span
+            className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-emerald-500' : 'bg-rose-400'}`}
+          />
+          <span className="text-xs font-medium text-gray-500">
+            {isConnected ? 'Connected' : 'Reconnecting\u2026'}
+          </span>
+        </div>
+        {messages.length > 0 && !isGenerating && (
+          <button
+            onClick={handleClearChat}
+            className="flex items-center gap-1 rounded-md px-2 py-1 text-[11px] text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+            title="Clear chat history"
+          >
+            <Trash2 size={12} />
+            Clear
+          </button>
+        )}
       </div>
+
+      {/* Undo toast */}
+      {undoRestore && (
+        <div className="flex items-center justify-between px-4 py-2 bg-navy text-white text-xs shrink-0">
+          <span>Chat cleared</span>
+          <button
+            onClick={handleUndo}
+            className="flex items-center gap-1 rounded-md px-2 py-1 bg-white/20 hover:bg-white/30 transition-colors"
+          >
+            <Undo2 size={12} />
+            Undo
+          </button>
+        </div>
+      )}
 
       {/* Analyze Toolbar */}
       <ActionToolbar

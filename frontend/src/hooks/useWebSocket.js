@@ -179,5 +179,25 @@ export function useWebSocket(clientId) {
     }, 300)
   }, [])
 
-  return { send, stop, messages, activeAgent, isConnected, suggestions }
+  // Clear chat: wipes messages locally + server-side, returns a restore function
+  const clearChat = useCallback(async () => {
+    const backup = [...(messages ?? [])]
+    setMessages([])
+    setSuggestions([])
+
+    try {
+      await api.clearChatHistory(clientId)
+    } catch {
+      // If server delete fails, restore messages
+      setMessages(backup)
+      return null
+    }
+
+    // Return a restore function the caller can use for undo
+    return () => {
+      setMessages(backup)
+    }
+  }, [clientId, messages])
+
+  return { send, stop, messages, activeAgent, isConnected, suggestions, clearChat }
 }
