@@ -1,62 +1,82 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import Sidebar from './components/Layout/Sidebar.jsx'
 import Header from './components/Layout/Header.jsx'
 import RightPanel from './components/Layout/RightPanel.jsx'
 import ChatWindow from './components/Chat/ChatWindow.jsx'
+import { useClients } from './hooks/useClients.js'
 
-export const CLIENTS = [
-  {
-    id: '11111111-1111-1111-1111-111111111111',
-    name: 'Margaret Chen',
-    persona: 'conservative_retiree',
-    personaLabel: 'Conservative Retiree',
-    age: 68,
-    occupation: 'Retired Teacher',
-    riskTolerance: 2,
-    totalValue: '$1,218,400',
-    initials: 'MC',
-    avatarColor: 'bg-blue-600',
-  },
-  {
-    id: '22222222-2222-2222-2222-222222222222',
-    name: 'Alex Rodriguez',
-    persona: 'aggressive_growth',
-    personaLabel: 'Aggressive Growth',
-    age: 32,
-    occupation: 'Startup Founder',
-    riskTolerance: 9,
-    totalValue: '$450,000',
-    initials: 'AR',
-    avatarColor: 'bg-orange-500',
-  },
-  {
-    id: '33333333-3333-3333-3333-333333333333',
-    name: 'Priya Sharma',
-    persona: 'young_professional',
-    personaLabel: 'Young Professional',
-    age: 26,
-    occupation: 'Data Scientist',
-    riskTolerance: 6,
-    totalValue: '$85,000',
-    initials: 'PS',
-    avatarColor: 'bg-purple-500',
-  },
-  {
-    id: '44444444-4444-4444-4444-444444444444',
-    name: 'Meridian Capital',
-    persona: 'institutional',
-    personaLabel: 'Institutional',
-    occupation: 'Hedge Fund',
-    riskTolerance: 7,
-    totalValue: '$50,000,000',
-    initials: 'MC',
-    avatarColor: 'bg-teal',
-  },
-]
+const MIN_SIDEBAR_WIDTH = 220
+const MAX_SIDEBAR_WIDTH = 420
+const MIN_RIGHT_PANEL_WIDTH = 260
+const MAX_RIGHT_PANEL_WIDTH = 540
+
+function clamp(value, min, max) {
+  return Math.min(Math.max(value, min), max)
+}
 
 export default function App() {
-  const [selectedClient, setSelectedClient] = useState(CLIENTS[0])
+  const { clients, loading: clientsLoading } = useClients()
+  const [selectedClient, setSelectedClient] = useState(null)
   const [rightPanelOpen, setRightPanelOpen] = useState(true)
+  const [sidebarWidth, setSidebarWidth] = useState(260)
+  const [rightPanelWidth, setRightPanelWidth] = useState(320)
+  const resizeStateRef = useRef(null)
+
+  const handleResize = useCallback((event) => {
+    if (!resizeStateRef.current) return
+    const { panel, startX, startWidth } = resizeStateRef.current
+    const delta = event.clientX - startX
+
+    if (panel === 'left') {
+      setSidebarWidth(clamp(startWidth + delta, MIN_SIDEBAR_WIDTH, MAX_SIDEBAR_WIDTH))
+      return
+    }
+
+    if (panel === 'right') {
+      setRightPanelWidth(clamp(startWidth - delta, MIN_RIGHT_PANEL_WIDTH, MAX_RIGHT_PANEL_WIDTH))
+    }
+  }, [])
+
+  const stopResizing = useCallback(() => {
+    resizeStateRef.current = null
+    document.body.style.cursor = ''
+    document.body.style.userSelect = ''
+    window.removeEventListener('mousemove', handleResize)
+    window.removeEventListener('mouseup', stopResizing)
+  }, [handleResize])
+
+  const startResizing = useCallback(
+    (panel, event) => {
+      const startWidth = panel === 'left' ? sidebarWidth : rightPanelWidth
+      resizeStateRef.current = { panel, startX: event.clientX, startWidth }
+      document.body.style.cursor = 'col-resize'
+      document.body.style.userSelect = 'none'
+      window.addEventListener('mousemove', handleResize)
+      window.addEventListener('mouseup', stopResizing)
+    },
+    [handleResize, rightPanelWidth, sidebarWidth, stopResizing],
+  )
+
+  useEffect(() => {
+    return () => stopResizing()
+  }, [stopResizing])
+
+  // Select first client once loaded
+  useEffect(() => {
+    if (clients.length > 0 && !selectedClient) {
+      setSelectedClient(clients[0])
+    }
+  }, [clients, selectedClient])
+
+  // Update selectedClient when clients refresh (e.g. totalValue changes)
+  useEffect(() => {
+    if (selectedClient && clients.length > 0) {
+      const updated = clients.find((c) => c.id === selectedClient.id)
+      if (updated && updated.totalValue !== selectedClient.totalValue) {
+        setSelectedClient(updated)
+      }
+    }
+  }, [clients, selectedClient])
 
   return (
     <div className="flex flex-col h-screen bg-light-gray font-sans overflow-hidden">
@@ -67,18 +87,31 @@ export default function App() {
       />
       <div className="flex flex-1 overflow-hidden">
         <Sidebar
-          clients={CLIENTS}
+          clients={clients}
           selectedClient={selectedClient}
           onSelectClient={setSelectedClient}
+          loading={clientsLoading}
+          width={sidebarWidth}
+          onResizeStart={(event) => startResizing('left', event)}
         />
         <main className="flex-1 flex flex-col overflow-hidden bg-white border-x border-gray-200">
-          <ChatWindow client={selectedClient} />
+          {selectedClient ? (
+            <ChatWindow client={selectedClient} />
+          ) : (
+            <div className="flex-1 flex items-center justify-center text-gray-400 text-sm">
+              {clientsLoading ? 'Loading clients...' : 'Select a client to begin'}
+            </div>
+          )}
         </main>
-        <RightPanel
-          client={selectedClient}
-          isOpen={rightPanelOpen}
-          onClose={() => setRightPanelOpen(false)}
-        />
+        {selectedClient && (
+          <RightPanel
+            client={selectedClient}
+            isOpen={rightPanelOpen}
+            onClose={() => setRightPanelOpen(false)}
+            width={rightPanelWidth}
+            onResizeStart={(event) => startResizing('right', event)}
+          />
+        )}
       </div>
     </div>
   )

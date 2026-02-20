@@ -1,99 +1,183 @@
 import { useEffect, useRef, useCallback, useState } from 'react'
+import { api } from '../services/api'
 
 const WS_BASE = `ws://${window.location.host}/ws/chat`
 
 // Hook for WebSocket chat streaming
-// Returns: { send, messages, activeAgent, isConnected, reconnect }
+// Returns: { send, stop, messages, activeAgent, isConnected }
 export function useWebSocket(clientId) {
   const ws = useRef(null)
   const [messages, setMessages] = useState([])
   const [activeAgent, setActiveAgent] = useState(null)
   const [isConnected, setIsConnected] = useState(false)
+  const [suggestions, setSuggestions] = useState([])
   const reconnectTimer = useRef(null)
   const retryDelay = useRef(1000)
-  const shouldReconnect = useRef(true)
+  const lastSentRef = useRef('')
+  const sessionRef = useRef(0)
+  const connectRef = useRef(null) // stores the current connect function
 
-  // Reset chat state when client switches
   useEffect(() => {
-    setMessages([])
+    const session = ++sessionRef.current
+
+    // Clear state immediately
     setActiveAgent(null)
-  }, [clientId])
+    setMessages([])
+    setIsConnected(false)
+    setSuggestions([])
+    lastSentRef.current = ''
 
-  const connect = useCallback(() => {
-    if (!clientId) return
-    const url = `${WS_BASE}/${clientId}`
-    const socket = new WebSocket(url)
-
-    socket.onopen = () => {
-      setIsConnected(true)
-      retryDelay.current = 1000
+    // Cleanup previous connection
+    clearTimeout(reconnectTimer.current)
+    if (ws.current) {
+      ws.current.onclose = null
+      ws.current.close()
+      ws.current = null
     }
 
-    socket.onclose = () => {
-      setIsConnected(false)
-      if (shouldReconnect.current) {
-        reconnectTimer.current = setTimeout(() => {
-          retryDelay.current = Math.min(retryDelay.current * 2, 8000)
-          connect()
-        }, retryDelay.current)
+    if (!clientId) {
+      connectRef.current = null
+      return
+    }
+
+    // Load persisted chat history
+    api.getChatHistory(clientId)
+      .then((data) => {
+        if (sessionRef.current !== session) return
+        const loaded = (data.messages ?? []).map((m) => ({
+          role: m.role,
+          content: m.content,
+          agent: m.agent,
+        }))
+        setMessages(loaded)
+      })
+      .catch(() => {})
+
+    let shouldReconnect = true
+
+    function connect() {
+      if (sessionRef.current !== session || !shouldReconnect) return
+
+      const socket = new WebSocket(`${WS_BASE}/${clientId}`)
+
+      socket.onopen = () => {
+        if (sessionRef.current !== session) { socket.close(); return }
+        setIsConnected(true)
+        retryDelay.current = 1000
       }
-    }
 
-    socket.onmessage = (event) => {
-      const data = JSON.parse(event.data)
+      socket.onclose = () => {
+        if (sessionRef.current !== session) return
+        setIsConnected(false)
+        if (shouldReconnect) {
+          reconnectTimer.current = setTimeout(() => {
+            retryDelay.current = Math.min(retryDelay.current * 2, 8000)
+            connect()
+          }, retryDelay.current)
+        }
+      }
 
-      if (data.type === 'agent_start') {
-        setActiveAgent(data.agent)
-      } else if (data.type === 'chunk') {
-        setMessages((prev) => {
-          const last = prev[prev.length - 1]
-          if (last?.role === 'assistant' && last.streaming) {
-            return [
-              ...prev.slice(0, -1),
-              { ...last, content: last.content + data.content },
-            ]
+      socket.onmessage = (event) => {
+        if (sessionRef.current !== session) return
+        const data = JSON.parse(event.data)
+
+        if (data.type === 'agent_start') {
+          setActiveAgent(data.agent)
+        } else if (data.type === 'chunk') {
+          setMessages((prev) => {
+            const last = prev[prev.length - 1]
+            if (last?.role === 'assistant' && last.streaming) {
+              return [
+                ...prev.slice(0, -1),
+                { ...last, content: last.content + data.content },
+              ]
+            }
+            return [...prev, { role: 'assistant', content: data.content, streaming: true }]
+          })
+        } else if (data.type === 'done') {
+          setActiveAgent(null)
+          lastSentRef.current = ''
+          if (Array.isArray(data.suggestions) && data.suggestions.length > 0) {
+            setSuggestions(data.suggestions)
           }
-          return [...prev, { role: 'assistant', content: data.content, streaming: true }]
-        })
-      } else if (data.type === 'done') {
-        setActiveAgent(null)
-        setMessages((prev) =>
-          prev.map((m, i) =>
-            i === prev.length - 1 ? { ...m, streaming: false, report: data.report } : m
+          setMessages((prev) =>
+            prev.map((m, i) =>
+              i === prev.length - 1 ? { ...m, streaming: false, report: data.report } : m
+            )
           )
-        )
-      } else if (data.type === 'error') {
-        setActiveAgent(null)
-        setMessages((prev) => [
-          ...prev,
-          {
-            role: 'assistant',
-            content: data.message ?? 'An error occurred. Please try again.',
-            error: true,
-          },
-        ])
+        } else if (data.type === 'error') {
+          setActiveAgent(null)
+          lastSentRef.current = ''
+          setMessages((prev) => [
+            ...prev,
+            {
+              role: 'assistant',
+              content: data.message ?? 'An error occurred. Please try again.',
+              error: true,
+            },
+          ])
+        }
       }
+
+      ws.current = socket
     }
 
-    ws.current = socket
-  }, [clientId])
-
-  useEffect(() => {
-    shouldReconnect.current = true
+    connectRef.current = connect
     connect()
+
     return () => {
-      shouldReconnect.current = false
+      shouldReconnect = false
       clearTimeout(reconnectTimer.current)
-      ws.current?.close()
+      if (ws.current) {
+        ws.current.onclose = null
+        ws.current.close()
+        ws.current = null
+      }
+      connectRef.current = null
     }
-  }, [connect])
+  }, [clientId])
 
   const send = useCallback((message, persona) => {
-    if (ws.current?.readyState === WebSocket.OPEN) {
-      setMessages((prev) => [...prev, { role: 'user', content: message }])
-      ws.current.send(JSON.stringify({ message, persona }))
-    }
+    if (ws.current?.readyState !== WebSocket.OPEN) return
+
+    const trimmed = message.trim()
+    if (trimmed === lastSentRef.current) return
+    lastSentRef.current = trimmed
+
+    setSuggestions([])
+    setMessages((prev) => [...prev, { role: 'user', content: trimmed }])
+    ws.current.send(JSON.stringify({ message: trimmed, persona }))
   }, [])
 
-  return { send, messages, activeAgent, isConnected, reconnect: connect }
+  const stop = useCallback(() => {
+    if (!ws.current) return
+
+    // Prevent auto-reconnect from the old socket, then close
+    ws.current.onclose = null
+    ws.current.close()
+    ws.current = null
+
+    // Finalize any streaming message
+    setMessages((prev) => {
+      const last = prev[prev.length - 1]
+      if (last?.role === 'assistant' && last.streaming) {
+        return [
+          ...prev.slice(0, -1),
+          { ...last, streaming: false, stopped: true },
+        ]
+      }
+      return prev
+    })
+
+    setActiveAgent(null)
+    setIsConnected(false)
+    lastSentRef.current = ''
+
+    // Reconnect after a short delay using the stored connect function
+    setTimeout(() => {
+      connectRef.current?.()
+    }, 300)
+  }, [])
+
+  return { send, stop, messages, activeAgent, isConnected, suggestions }
 }

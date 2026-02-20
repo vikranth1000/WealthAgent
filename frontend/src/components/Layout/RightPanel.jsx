@@ -9,7 +9,7 @@ import HoldingsTable from '../Dashboard/HoldingsTable.jsx'
 function Section({ title, children }) {
   return (
     <div>
-      <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+      <h3 className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2">
         {title}
       </h3>
       {children}
@@ -17,11 +17,31 @@ function Section({ title, children }) {
   )
 }
 
-// analysis shape: { total_value, total_return, current_allocation, target_allocation,
-//                   sector_breakdown, sharpe_ratio, sortino_ratio, max_drawdown, volatility }
-// portfolio shape: { holdings: [...] }
-export default function RightPanel({ client, isOpen, onClose }) {
-  const { portfolio, analysis, loading, error } = usePortfolio(client?.id)
+function Skeleton({ className }) {
+  return <div className={`animate-pulse bg-gray-200 rounded-xl ${className}`} />
+}
+
+function LoadingSkeleton() {
+  return (
+    <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="grid grid-cols-2 gap-2">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="bg-white rounded-xl border border-gray-200 px-3 py-2.5">
+            <Skeleton className="h-3 w-16 mb-2" />
+            <Skeleton className="h-5 w-20" />
+          </div>
+        ))}
+      </div>
+      <Skeleton className="h-32 w-full" />
+      <Skeleton className="h-40 w-full" />
+      <Skeleton className="h-32 w-full" />
+      <Skeleton className="h-48 w-full" />
+    </div>
+  )
+}
+
+export default function RightPanel({ client, isOpen, onClose, width, onResizeStart }) {
+  const { portfolio, analysis, performanceHistory, holdingsDetail, loading, error } = usePortfolio(client?.id)
 
   if (!isOpen) return null
 
@@ -34,27 +54,36 @@ export default function RightPanel({ client, isOpen, onClose }) {
       }
     : {}
 
+  // Use holdingsDetail if available (has prices + P&L), fallback to portfolio holdings
+  const displayHoldings = holdingsDetail.length > 0 ? holdingsDetail : portfolio?.holdings
+
   return (
-    <aside className="w-80 shrink-0 flex flex-col bg-light-gray border-l border-gray-200 overflow-hidden">
+    <aside
+      className="relative shrink-0 flex flex-col bg-gray-50 border-l border-gray-200 overflow-hidden"
+      style={{ width: `${width}px` }}
+    >
+      <div
+        className="absolute top-0 left-0 h-full w-1.5 -translate-x-1/2 cursor-col-resize hover:bg-teal/20 transition-colors"
+        onMouseDown={onResizeStart}
+        role="separator"
+        aria-orientation="vertical"
+        aria-label="Resize dashboard panel"
+      />
       <div className="flex items-center justify-between px-4 py-3 bg-white border-b border-gray-200 shrink-0">
         <div>
-          <h2 className="text-sm font-semibold text-navy">Portfolio Dashboard</h2>
-          {client && <p className="text-xs text-gray-500 mt-0.5">{client.name}</p>}
+          <h2 className="text-[13px] font-semibold text-navy">Portfolio Dashboard</h2>
+          {client && <p className="text-[11px] text-gray-500 mt-0.5">{client.name}</p>}
         </div>
         <button
           onClick={onClose}
-          className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
+          className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
           title="Close panel"
         >
-          <X size={16} />
+          <X size={14} />
         </button>
       </div>
 
-      {loading && (
-        <div className="flex-1 flex items-center justify-center text-gray-400 text-sm">
-          Loading portfolio…
-        </div>
-      )}
+      {loading && <LoadingSkeleton />}
 
       {!loading && error && (
         <div className="flex-1 flex items-center justify-center text-red-400 text-sm px-4 text-center">
@@ -71,7 +100,7 @@ export default function RightPanel({ client, isOpen, onClose }) {
           </Section>
 
           <Section title="Performance">
-            <PerformanceChart data={[]} />
+            <PerformanceChart data={performanceHistory} />
           </Section>
 
           <Section title="Sector Exposure">
@@ -79,14 +108,14 @@ export default function RightPanel({ client, isOpen, onClose }) {
           </Section>
 
           <Section title="Holdings">
-            <HoldingsTable holdings={portfolio?.holdings} />
+            <HoldingsTable holdings={displayHoldings} enhanced={holdingsDetail.length > 0} />
           </Section>
         </div>
       )}
 
       <div className="px-4 py-2 border-t border-gray-200 bg-white shrink-0">
-        <p className="text-xs text-gray-400 text-center">
-          Charts powered by Recharts · Data from yfinance
+        <p className="text-[10px] text-gray-400 text-center">
+          Charts powered by Recharts &middot; Data from yfinance
         </p>
       </div>
     </aside>

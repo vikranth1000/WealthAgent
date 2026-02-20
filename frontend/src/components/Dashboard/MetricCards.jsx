@@ -41,9 +41,9 @@ export default function MetricCards({ metrics = {} }) {
       {cards.map(({ key, label }) => {
         const raw = metrics[key] ?? null
         return (
-          <div key={key} className="bg-white rounded-lg border border-gray-200 px-3 py-2.5">
-            <p className="text-xs text-gray-500">{label}</p>
-            <p className={`text-base font-bold mt-0.5 ${valueColor(key, raw)}`}>
+          <div key={key} className="bg-white rounded-xl border border-gray-200 px-3 py-2.5">
+            <p className="text-[11px] text-gray-500">{label}</p>
+            <p className={`text-[15px] font-bold mt-0.5 ${valueColor(key, raw)}`}>
               {formatValue(key, raw)}
             </p>
           </div>

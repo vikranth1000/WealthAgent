@@ -43,11 +43,11 @@ CONSERVATIVE_RETIREE = PersonaConfig(
     risk_framing="Your savings are safe",
     response_length="medium",
     suggested_prompts=[
-        "How is my portfolio doing?",
-        "Is my income still steady?",
-        "Am I taking on too much risk?",
-        "What are my dividends this month?",
-        "Should I make any changes?",
+        "How is this portfolio performing?",
+        "Is their income stream stable?",
+        "Is this client taking on too much risk?",
+        "What are the dividends this month?",
+        "Should we make any changes?",
     ],
     style_description=(
         "Write at an 8th-grade reading level. Use everyday language — avoid financial "
@@ -70,10 +70,10 @@ AGGRESSIVE_GROWTH = PersonaConfig(
     response_length="short",
     suggested_prompts=[
         "Tax harvesting opportunities?",
-        "Where is my biggest alpha source?",
-        "Show me concentration risk",
-        "What's my max drawdown this month?",
-        "Any momentum plays I'm missing?",
+        "Where is the biggest alpha source?",
+        "Show concentration risk",
+        "What's the max drawdown this month?",
+        "Any momentum plays being missed?",
     ],
     style_description=(
         "Be direct and dense — no filler text. Lead with key numbers and action items. "
@@ -95,11 +95,11 @@ YOUNG_PROFESSIONAL = PersonaConfig(
     risk_framing="Here's what this means for you",
     response_length="medium-long",
     suggested_prompts=[
-        "Explain my portfolio risk",
-        "Am I diversified enough?",
+        "Explain the portfolio risk profile",
+        "Is this client diversified enough?",
         "What is a Sharpe ratio?",
-        "How should I rebalance?",
-        "What does volatility mean for me?",
+        "How should we rebalance?",
+        "What does the volatility mean for this client?",
     ],
     style_description=(
         "Use high-school level language. When technical terms are necessary, explain "

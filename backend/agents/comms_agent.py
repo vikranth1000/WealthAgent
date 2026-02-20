@@ -47,6 +47,92 @@ FALLBACK_MESSAGE = (
 )
 
 
+def format_portfolio_for_llm(analysis: dict) -> str:
+    """Format portfolio analysis into structured text the LLM can reason about.
+
+    Converts raw JSON analytics into a dense, readable format so the comms
+    agent produces responses with accurate, specific numbers.
+
+    Args:
+        analysis: PortfolioAnalysis dict from the portfolio agent.
+
+    Returns:
+        Structured text block with portfolio data.
+    """
+    if not analysis:
+        return ""
+
+    lines: list[str] = []
+
+    # Portfolio overview
+    total_val = analysis.get("total_value", 0)
+    metrics = analysis.get("metrics", {})
+    ret_pct = metrics.get("total_return_pct", 0)
+    lines.append(
+        f"PORTFOLIO OVERVIEW: Total Value ${total_val:,.0f} | "
+        f"Return {ret_pct:+.1%}"
+    )
+
+    # Key metrics
+    metric_parts: list[str] = []
+    if "sharpe_ratio" in metrics:
+        metric_parts.append(f"Sharpe {metrics['sharpe_ratio']:.2f}")
+    if "sortino_ratio" in metrics:
+        metric_parts.append(f"Sortino {metrics['sortino_ratio']:.2f}")
+    if "max_drawdown" in metrics:
+        metric_parts.append(f"Max DD {metrics['max_drawdown']:.1%}")
+    if "beta" in metrics:
+        metric_parts.append(f"Beta {metrics['beta']:.2f}")
+    if "annualized_volatility" in metrics:
+        metric_parts.append(f"Vol {metrics['annualized_volatility']:.1%}")
+    if metric_parts:
+        lines.append(f"KEY METRICS: {' | '.join(metric_parts)}")
+
+    # Allocation with drift
+    alloc = analysis.get("allocation", {})
+    curr = alloc.get("current", {})
+    target = alloc.get("target", {})
+    drift = alloc.get("drift", {})
+    if curr:
+        alloc_parts = []
+        for cls in sorted(curr.keys()):
+            c_pct = curr[cls] * 100
+            t_pct = target.get(cls, 0) * 100
+            d_pct = drift.get(cls, 0) * 100
+            drift_str = f" ({d_pct:+.1f}% drift)" if d_pct >= 1.0 else ""
+            alloc_parts.append(f"{cls} {c_pct:.1f}%→{t_pct:.1f}%{drift_str}")
+        lines.append(f"ALLOCATION: {' | '.join(alloc_parts)}")
+
+    # Risk flags
+    flags = analysis.get("risk_flags", [])
+    if flags:
+        lines.append(f"RISK FLAGS: {' | '.join(flags)}")
+
+    # Tax-loss candidates
+    tax_candidates = analysis.get("tax_loss_candidates", [])
+    if tax_candidates:
+        tickers = [c["ticker"] for c in tax_candidates]
+        total_loss = sum(c.get("unrealized_loss_usd", 0) for c in tax_candidates)
+        lines.append(
+            f"TAX-LOSS CANDIDATES: {', '.join(tickers)} "
+            f"(total harvestable: ${abs(total_loss):,.0f})"
+        )
+
+    # Rebalancing trades
+    trades = analysis.get("rebalancing_trades", [])
+    if trades:
+        trade_parts = []
+        for t in trades:
+            action = t.get("action", "")
+            shares = t.get("shares", 0)
+            ticker = t.get("ticker", "")
+            value = t.get("estimated_value", 0)
+            trade_parts.append(f"{action} {shares:.0f} {ticker} (${value:,.0f})")
+        lines.append(f"REBALANCING: {' | '.join(trade_parts)}")
+
+    return "\n".join(lines)
+
+
 # ---------------------------------------------------------------------------
 # Internal helpers
 # ---------------------------------------------------------------------------
@@ -64,9 +150,8 @@ def _make_client() -> anthropic.AsyncAnthropic:
 def _build_prompts(state: WealthAgentState) -> tuple[str, str]:
     """Construct the system and user prompts from the current state.
 
-    Serialises ``portfolio_analysis`` and ``market_research`` to JSON strings
-    (empty string when ``None``).  Chat history is formatted via
-    ``format_chat_history``.
+    Uses ``format_portfolio_for_llm`` to produce structured text instead of
+    raw JSON dumps, so the LLM can reference specific numbers accurately.
 
     Args:
         state: The current ``WealthAgentState`` flowing through the graph.
@@ -80,9 +165,7 @@ def _build_prompts(state: WealthAgentState) -> tuple[str, str]:
     persona = get_persona(state["persona"])
 
     portfolio_raw = state.get("portfolio_analysis")
-    portfolio_str = (
-        json.dumps(portfolio_raw, indent=2) if portfolio_raw is not None else ""
-    )
+    portfolio_str = format_portfolio_for_llm(portfolio_raw) if portfolio_raw else ""
 
     market_raw = state.get("market_research")
     market_str = (
@@ -91,11 +174,12 @@ def _build_prompts(state: WealthAgentState) -> tuple[str, str]:
 
     history_str = format_chat_history(state.get("chat_history", []))
 
+    client_name = state.get("client_name", "Client")
+
     system_prompt = build_system_prompt()
     user_prompt = build_user_prompt(
         persona=persona,
-        # client_name is not stored in WealthAgentState; use a safe default.
-        client_name="Client",
+        client_name=client_name,
         query=state.get("query", ""),
         portfolio_analysis=portfolio_str,
         market_research=market_str,
@@ -338,3 +422,63 @@ async def comms_agent_stream(
     except Exception as exc:  # noqa: BLE001
         logger.error("comms_agent_stream: unexpected error: %s", exc)
         yield FALLBACK_MESSAGE
+
+
+# ---------------------------------------------------------------------------
+# Follow-up suggestion generator
+# ---------------------------------------------------------------------------
+
+_SUGGESTIONS_SYSTEM = """\
+You generate 3 short follow-up questions a financial advisor might ask next, \
+given the conversation context. Output ONLY a JSON array of 3 strings. \
+Each question should be under 60 characters. No explanation, no markdown.\
+"""
+
+
+async def generate_follow_up_suggestions(
+    query: str,
+    response_summary: str,
+    persona: str,
+) -> list[str]:
+    """Generate 3 contextual follow-up question suggestions.
+
+    Makes a lightweight LLM call after the main response completes.
+    Returns an empty list on any failure so the UI can fall back to
+    static persona prompts.
+
+    Args:
+        query: The user's original question.
+        response_summary: First ~300 chars of the AI response.
+        persona: The persona key for context.
+
+    Returns:
+        List of 3 follow-up question strings, or empty list on error.
+    """
+    client = _make_client()
+
+    user_msg = (
+        f"Persona: {persona}\n"
+        f"User asked: {query}\n"
+        f"AI responded (summary): {response_summary[:300]}\n\n"
+        "Generate 3 follow-up questions as a JSON array."
+    )
+
+    try:
+        response = await asyncio.wait_for(
+            client.messages.create(
+                model=_MODEL,
+                max_tokens=150,
+                system=_SUGGESTIONS_SYSTEM,
+                messages=[{"role": "user", "content": user_msg}],
+            ),
+            timeout=10.0,
+        )
+        import json as _json
+        text = response.content[0].text.strip()
+        suggestions = _json.loads(text)
+        if isinstance(suggestions, list) and len(suggestions) >= 3:
+            return [str(s) for s in suggestions[:3]]
+        return []
+    except Exception as exc:
+        logger.warning("generate_follow_up_suggestions: failed: %s", exc)
+        return []

@@ -1,21 +1,21 @@
 const PROMPTS = {
   conservative_retiree: [
-    'How is my portfolio doing?',
-    'Is my income safe?',
-    'Should I rebalance now?',
-    'What is my dividend yield?',
+    'How is this portfolio performing?',
+    'Is their income stream stable?',
+    'Should we rebalance now?',
+    'What is the current dividend yield?',
   ],
   aggressive_growth: [
     'Tax harvesting opportunities?',
-    'Where should I add risk?',
-    'Show me my tech exposure',
+    'Where should we add risk?',
+    'Show the tech exposure',
     'Best performing positions?',
   ],
   young_professional: [
-    'Explain my portfolio risk',
-    'Am I on track for my goals?',
-    'What should I invest next?',
-    'What is my Sharpe ratio?',
+    'Explain the portfolio risk profile',
+    'Are they on track for their goals?',
+    'What should they invest in next?',
+    'What is the Sharpe ratio?',
   ],
   institutional: [
     'Performance attribution this quarter',
@@ -25,18 +25,28 @@ const PROMPTS = {
   ],
 }
 
-// Props: persona (string), onSelect (fn)
-export default function SuggestedPrompts({ persona, onSelect }) {
-  const prompts = PROMPTS[persona] ?? []
+// Props: persona (string), onSelect (fn), compact (bool), dynamicSuggestions (string[])
+export default function SuggestedPrompts({ persona, onSelect, compact, dynamicSuggestions }) {
+  // Use dynamic suggestions if available, otherwise fall back to static persona prompts
+  const prompts = (dynamicSuggestions && dynamicSuggestions.length > 0)
+    ? dynamicSuggestions
+    : (PROMPTS[persona] ?? [])
+
   if (!prompts.length) return null
 
+  const isDynamic = dynamicSuggestions && dynamicSuggestions.length > 0
+
   return (
-    <div className="flex flex-wrap gap-2 px-4 py-3">
+    <div className={`flex flex-wrap gap-2 px-4 ${compact ? 'pt-2 pb-1.5' : 'py-3'}`}>
       {prompts.map((prompt) => (
         <button
           key={prompt}
           onClick={() => onSelect?.(prompt)}
-          className="px-3 py-1.5 rounded-full border border-gray-200 bg-white hover:border-teal hover:bg-teal/5 text-xs text-gray-600 transition-colors"
+          className={`rounded-lg border bg-white transition-colors active:scale-95 ${
+            isDynamic
+              ? 'border-teal/30 text-teal hover:border-teal/50 hover:bg-teal/5'
+              : 'border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
+          } ${compact ? 'px-2.5 py-1 text-xs' : 'px-3 py-1.5 text-xs'}`}
         >
           {prompt}
         </button>

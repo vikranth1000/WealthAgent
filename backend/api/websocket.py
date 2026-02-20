@@ -181,10 +181,12 @@ async def websocket_chat(websocket: WebSocket, client_id: str) -> None:
                     final_state = event_data
                     report = final_state.get("client_report")
                     final_agent = final_state.get("current_agent")
+                    suggestions = final_state.get("suggestions", [])
 
                     await websocket.send_json({
                         "type": "done",
                         "report": report,
+                        "suggestions": suggestions,
                     })
 
                 elif event_type == "error":

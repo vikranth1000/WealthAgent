@@ -9,13 +9,13 @@ const PERSONA_COLORS = {
 
 export default function Header({ client, rightPanelOpen, onTogglePanel }) {
   return (
-    <header className="flex items-center justify-between h-14 px-4 bg-navy text-white shrink-0 shadow-md z-10">
-      <div className="flex items-center gap-2">
-        <div className="flex items-center justify-center w-8 h-8 bg-teal rounded">
+    <header className="flex items-center justify-between h-14 px-5 bg-navy text-white shrink-0 shadow-md z-10">
+      <div className="flex items-center gap-2.5">
+        <div className="flex items-center justify-center w-8 h-8 bg-teal rounded-lg">
           <span className="text-white font-bold text-sm">W</span>
         </div>
         <span className="font-semibold text-lg tracking-tight">WealthAgent</span>
-        <span className="ml-1 text-gray-400 text-sm hidden sm:block">
+        <span className="ml-0.5 text-gray-400 text-sm hidden sm:block">
           / AI Wealth Management
         </span>
       </div>
@@ -27,7 +27,7 @@ export default function Header({ client, rightPanelOpen, onTogglePanel }) {
             <p className="text-xs text-gray-300 mt-0.5">{client.occupation}</p>
           </div>
           <span
-            className={`hidden md:inline-flex text-xs font-medium px-2 py-0.5 rounded-full ${PERSONA_COLORS[client.persona]}`}
+            className={`hidden md:inline-flex text-[11px] font-medium px-2.5 py-1 rounded-lg ${PERSONA_COLORS[client.persona]}`}
           >
             {client.personaLabel}
           </span>
@@ -36,7 +36,7 @@ export default function Header({ client, rightPanelOpen, onTogglePanel }) {
 
       <button
         onClick={onTogglePanel}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded text-sm text-gray-200 hover:bg-white/10 transition-colors"
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-gray-200 hover:bg-white/10 transition-colors"
         title={rightPanelOpen ? 'Hide dashboard' : 'Show dashboard'}
       >
         <LayoutDashboard size={15} />

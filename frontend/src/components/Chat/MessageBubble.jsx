@@ -1,6 +1,3 @@
-const DISCLAIMER =
-  '\u26a0\ufe0f AI-generated. Not financial advice. Consult a qualified advisor before making investment decisions.'
-
 function parseInline(text) {
   const parts = []
   const regex = /(\*\*(.+?)\*\*|\*(.+?)\*|`([^`]+)`)/g
@@ -14,7 +11,7 @@ function parseInline(text) {
     else if (match[3]) parts.push(<em key={idx++}>{match[3]}</em>)
     else if (match[4])
       parts.push(
-        <code key={idx++} className="bg-gray-200 px-1 rounded text-xs font-mono">
+        <code key={idx++} className="rounded bg-gray-200/60 px-1 py-0.5 text-xs font-mono">
           {match[4]}
         </code>
       )
@@ -44,12 +41,32 @@ function renderMarkdown(content) {
       elements.push(
         <pre
           key={k++}
-          className="bg-gray-100 rounded-lg p-3 my-2 text-xs font-mono overflow-x-auto whitespace-pre"
+          className="my-2 overflow-x-auto whitespace-pre rounded-lg border border-gray-200 bg-gray-50 p-3 text-xs font-mono"
         >
           {codeLines.join('\n')}
         </pre>
       )
       i++ // skip closing ```
+      continue
+    }
+
+    // Headings
+    if (line.startsWith('### ')) {
+      elements.push(
+        <h4 key={k++} className="mb-1 mt-3 text-sm font-semibold text-gray-800">
+          {parseInline(line.slice(4))}
+        </h4>
+      )
+      i++
+      continue
+    }
+    if (line.startsWith('## ')) {
+      elements.push(
+        <h3 key={k++} className="mb-1 mt-3 text-sm font-bold text-navy">
+          {parseInline(line.slice(3))}
+        </h3>
+      )
+      i++
       continue
     }
 
@@ -61,51 +78,74 @@ function renderMarkdown(content) {
         i++
       }
       elements.push(
-        <ul key={k++} className="list-disc list-inside my-1 space-y-0.5">
+        <ul key={k++} className="ml-1 my-1.5 list-inside list-disc space-y-1">
           {items.map((item, idx) => (
-            <li key={idx}>{parseInline(item)}</li>
+            <li key={idx} className="leading-relaxed">{parseInline(item)}</li>
           ))}
         </ul>
       )
       continue
     }
 
-    // Empty line → spacer
+    // Numbered list (collect consecutive items)
+    if (/^\d+\.\s/.test(line)) {
+      const items = []
+      while (i < lines.length && /^\d+\.\s/.test(lines[i])) {
+        items.push(lines[i].replace(/^\d+\.\s/, ''))
+        i++
+      }
+      elements.push(
+        <ol key={k++} className="ml-1 my-1.5 list-inside list-decimal space-y-1">
+          {items.map((item, idx) => (
+            <li key={idx} className="leading-relaxed">{parseInline(item)}</li>
+          ))}
+        </ol>
+      )
+      continue
+    }
+
+    // Horizontal rule / disclaimer separator
+    if (line.trim() === '---' || line.trim() === '***') {
+      elements.push(<hr key={k++} className="my-3 border-gray-200" />)
+      i++
+      continue
+    }
+
+    // Empty line -> spacer
     if (line.trim() === '') {
-      elements.push(<br key={k++} />)
+      elements.push(<div key={k++} className="h-2" />)
       i++
       continue
     }
 
     // Regular line with inline formatting
-    elements.push(<p key={k++} className="my-0.5">{parseInline(line)}</p>)
+    elements.push(<p key={k++} className="my-0.5 leading-6">{parseInline(line)}</p>)
     i++
   }
   return elements
 }
 
-// Props: role ('user' | 'assistant'), content (string), streaming (bool)
-export default function MessageBubble({ role, content, streaming }) {
+// Props: role ('user' | 'assistant'), content (string), streaming (bool), error (bool)
+export default function MessageBubble({ role, content, streaming, error }) {
   const isUser = role === 'user'
 
   return (
-    <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-3`}>
-      <div className="max-w-[80%]">
+    <div className={`mb-3 flex ${isUser ? 'justify-end' : 'justify-start'}`}>
+      <div className={`${isUser ? 'max-w-[68%]' : 'max-w-[78%]'}`}>
         <div
-          className={`px-4 py-3 rounded-2xl text-sm leading-relaxed ${
+          className={`px-4 py-3 text-sm leading-6 ${
             isUser
-              ? 'bg-navy text-white rounded-br-sm whitespace-pre-wrap'
-              : 'bg-light-gray text-gray-800 border border-gray-200 rounded-bl-sm'
+              ? 'whitespace-pre-wrap rounded-2xl rounded-br-md bg-navy text-white shadow-sm'
+              : error
+                ? 'rounded-2xl rounded-bl-md border border-red-200 bg-red-50 text-red-800'
+                : 'rounded-2xl rounded-bl-md border border-gray-200 bg-white text-gray-800'
           }`}
         >
           {isUser ? content : renderMarkdown(content)}
           {streaming && (
-            <span className="inline-block w-1 h-4 bg-teal ml-1 animate-pulse rounded align-text-bottom" />
+            <span className="ml-1 inline-block h-4 w-0.5 animate-pulse rounded-full bg-teal align-text-bottom" />
           )}
         </div>
-        {!isUser && (
-          <p className="text-xs text-gray-400 mt-1 ml-1 leading-snug">{DISCLAIMER}</p>
-        )}
       </div>
     </div>
   )

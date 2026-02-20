@@ -33,4 +33,12 @@ export const api = {
 
   clearChatHistory: (clientId) =>
     request(`/clients/${clientId}/chat-history`, { method: 'DELETE' }),
+
+  getRebalancing: (clientId) => request(`/clients/${clientId}/rebalancing`),
+
+  getTaxLoss: (clientId) => request(`/clients/${clientId}/tax-loss`),
+
+  getPerformanceHistory: (clientId) => request(`/clients/${clientId}/performance-history`),
+
+  getHoldingsDetail: (clientId) => request(`/clients/${clientId}/holdings-detail`),
 }

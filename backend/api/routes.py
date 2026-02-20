@@ -27,6 +27,8 @@ from analytics.portfolio import (
     total_portfolio_value,
     total_return,
 )
+from analytics.rebalancing import allocation_drift as compute_allocation_drift, rebalancing_trades
+from analytics.tax_loss import tax_loss_candidates
 from api.schemas import (
     ChatHistoryResponse,
     ChatMessageResponse,
@@ -34,7 +36,14 @@ from api.schemas import (
     ChatResponse,
     ClientListResponse,
     ClientResponse,
+    HoldingDetailResponse,
+    PerformanceHistoryResponse,
+    PerformancePoint,
     PortfolioResponse,
+    RebalancingResponse,
+    RebalancingTradeResponse,
+    TaxLossCandidateResponse,
+    TaxLossResponse,
 )
 from data.database import get_db
 from data.models import ChatMessage, Client, Holding as HoldingModel, Portfolio
@@ -238,6 +247,228 @@ async def get_analysis(
         max_drawdown=_safe_float(max_drawdown(daily_returns)),
         volatility=_safe_float(annualized_volatility(daily_returns)),
     )
+
+
+@router.get("/clients/{client_id}/rebalancing", response_model=RebalancingResponse)
+async def get_rebalancing(
+    client_id: str,
+    db: AsyncSession = Depends(get_db),
+) -> RebalancingResponse:
+    """Return rebalancing trades, allocation drift, and current vs target allocation."""
+    client_result = await db.execute(select(Client).where(Client.id == client_id))
+    if client_result.scalar_one_or_none() is None:
+        raise HTTPException(status_code=404, detail=f"Client {client_id!r} not found")
+
+    result = await db.execute(
+        select(Portfolio)
+        .where(Portfolio.client_id == client_id)
+        .options(selectinload(Portfolio.holdings))
+    )
+    portfolio = result.scalar_one_or_none()
+    if portfolio is None:
+        raise HTTPException(status_code=404, detail=f"No portfolio found for client {client_id!r}")
+
+    analytics_holdings = [_to_analytics_holding(h) for h in portfolio.holdings]
+    tickers = list({h.ticker for h in analytics_holdings})
+    prices = get_current_prices(tickers)
+    target_alloc: dict[str, float] = json.loads(portfolio.target_allocation)
+
+    curr_alloc = current_allocation(analytics_holdings, prices=prices)
+    drift = compute_allocation_drift(curr_alloc, target_alloc)
+    trades = rebalancing_trades(analytics_holdings, target_alloc, prices=prices)
+
+    trade_responses = [
+        RebalancingTradeResponse(
+            ticker=t.ticker,
+            asset_class=t.asset_class,
+            action=t.action.upper(),
+            shares=round(t.shares, 2),
+            value=round(t.value, 2),
+        )
+        for t in trades
+    ]
+
+    total_buy = sum(t.value for t in trade_responses if t.action == "BUY")
+    total_sell = sum(t.value for t in trade_responses if t.action == "SELL")
+
+    return RebalancingResponse(
+        client_id=client_id,
+        current_allocation=curr_alloc,
+        target_allocation=target_alloc,
+        drift=drift,
+        trades=trade_responses,
+        total_buy_value=round(total_buy, 2),
+        total_sell_value=round(total_sell, 2),
+    )
+
+
+@router.get("/clients/{client_id}/tax-loss", response_model=TaxLossResponse)
+async def get_tax_loss(
+    client_id: str,
+    db: AsyncSession = Depends(get_db),
+) -> TaxLossResponse:
+    """Return tax-loss harvesting candidates and estimated savings."""
+    client_result = await db.execute(select(Client).where(Client.id == client_id))
+    if client_result.scalar_one_or_none() is None:
+        raise HTTPException(status_code=404, detail=f"Client {client_id!r} not found")
+
+    result = await db.execute(
+        select(Portfolio)
+        .where(Portfolio.client_id == client_id)
+        .options(selectinload(Portfolio.holdings))
+    )
+    portfolio = result.scalar_one_or_none()
+    if portfolio is None:
+        raise HTTPException(status_code=404, detail=f"No portfolio found for client {client_id!r}")
+
+    analytics_holdings = [_to_analytics_holding(h) for h in portfolio.holdings]
+    tickers = list({h.ticker for h in analytics_holdings})
+    prices = get_current_prices(tickers)
+
+    candidates = tax_loss_candidates(analytics_holdings, prices=prices)
+
+    candidate_responses = [
+        TaxLossCandidateResponse(
+            ticker=c.ticker,
+            shares=c.shares,
+            cost_basis_per_share=round(c.cost_basis_per_share, 2),
+            current_price=round(c.current_price, 2),
+            unrealized_return_pct=round(c.unrealized_return * 100, 2),
+            unrealized_loss=round(c.unrealized_loss, 2),
+        )
+        for c in candidates
+    ]
+
+    total_loss = sum(c.unrealized_loss for c in candidates)
+    # Estimate 25% tax rate for savings calculation
+    estimated_savings = abs(total_loss) * 0.25
+
+    return TaxLossResponse(
+        client_id=client_id,
+        candidates=candidate_responses,
+        total_harvestable_loss=round(total_loss, 2),
+        estimated_tax_savings=round(estimated_savings, 2),
+    )
+
+
+@router.get("/clients/{client_id}/performance-history", response_model=PerformanceHistoryResponse)
+async def get_performance_history(
+    client_id: str,
+    db: AsyncSession = Depends(get_db),
+) -> PerformanceHistoryResponse:
+    """Return daily portfolio value timeseries for performance chart."""
+    client_result = await db.execute(select(Client).where(Client.id == client_id))
+    if client_result.scalar_one_or_none() is None:
+        raise HTTPException(status_code=404, detail=f"Client {client_id!r} not found")
+
+    result = await db.execute(
+        select(Portfolio)
+        .where(Portfolio.client_id == client_id)
+        .options(selectinload(Portfolio.holdings))
+    )
+    portfolio = result.scalar_one_or_none()
+    if portfolio is None:
+        raise HTTPException(status_code=404, detail=f"No portfolio found for client {client_id!r}")
+
+    analytics_holdings = [_to_analytics_holding(h) for h in portfolio.holdings]
+    tickers = list({h.ticker for h in analytics_holdings})
+
+    if not tickers:
+        return PerformanceHistoryResponse(client_id=client_id, history=[])
+
+    prices = get_current_prices(tickers)
+    port_value = total_portfolio_value(analytics_holdings, prices=prices)
+
+    if port_value <= 0:
+        return PerformanceHistoryResponse(client_id=client_id, history=[])
+
+    # Build weight map
+    weights: dict[str, float] = {}
+    for h in analytics_holdings:
+        price = prices.get(h.ticker, 0.0)
+        if price > 0.0:
+            weights[h.ticker] = (h.shares * price) / port_value
+
+    try:
+        hist = yf.download(tickers, period="1y", progress=False, auto_adjust=True)
+        if hist.empty or "Close" not in hist.columns:
+            return PerformanceHistoryResponse(client_id=client_id, history=[])
+
+        close: pd.DataFrame = hist["Close"]
+        if isinstance(close, pd.Series):
+            close = close.to_frame(name=tickers[0])
+
+        daily_pct = close.pct_change().fillna(0.0)
+
+        # Compute weighted portfolio returns
+        port_returns = pd.Series(0.0, index=daily_pct.index)
+        for ticker, weight in weights.items():
+            if ticker in daily_pct.columns:
+                port_returns = port_returns + weight * daily_pct[ticker].fillna(0.0)
+
+        # Convert returns to portfolio value series
+        cumulative = (1 + port_returns).cumprod() * port_value
+        # Sample weekly to reduce data points
+        weekly = cumulative.resample("W-FRI").last().dropna()
+
+        history = [
+            PerformancePoint(
+                date=idx.strftime("%Y-%m-%d"),
+                value=round(float(val), 2),
+            )
+            for idx, val in weekly.items()
+        ]
+
+        return PerformanceHistoryResponse(client_id=client_id, history=history)
+
+    except Exception as exc:
+        logger.warning("Failed to build performance history: %s", exc)
+        return PerformanceHistoryResponse(client_id=client_id, history=[])
+
+
+@router.get("/clients/{client_id}/holdings-detail", response_model=list[HoldingDetailResponse])
+async def get_holdings_detail(
+    client_id: str,
+    db: AsyncSession = Depends(get_db),
+) -> list[HoldingDetailResponse]:
+    """Return holdings with current price, market value, and unrealized P&L."""
+    client_result = await db.execute(select(Client).where(Client.id == client_id))
+    if client_result.scalar_one_or_none() is None:
+        raise HTTPException(status_code=404, detail=f"Client {client_id!r} not found")
+
+    result = await db.execute(
+        select(Portfolio)
+        .where(Portfolio.client_id == client_id)
+        .options(selectinload(Portfolio.holdings))
+    )
+    portfolio = result.scalar_one_or_none()
+    if portfolio is None:
+        raise HTTPException(status_code=404, detail=f"No portfolio found for client {client_id!r}")
+
+    tickers = list({h.ticker for h in portfolio.holdings})
+    prices = get_current_prices(tickers)
+
+    details = []
+    for h in portfolio.holdings:
+        price = prices.get(h.ticker, 0.0)
+        market_value = h.shares * price
+        cost_total = h.shares * h.cost_basis
+        pnl = market_value - cost_total
+        pnl_pct = (pnl / cost_total * 100) if cost_total > 0 else 0.0
+
+        details.append(HoldingDetailResponse(
+            ticker=h.ticker,
+            shares=h.shares,
+            cost_basis=h.cost_basis,
+            current_price=round(price, 2),
+            market_value=round(market_value, 2),
+            unrealized_pnl=round(pnl, 2),
+            unrealized_pnl_pct=round(pnl_pct, 2),
+            asset_class=h.asset_class,
+            sector=h.sector,
+        ))
+
+    return details
 
 
 @router.get("/clients/{client_id}/chat-history", response_model=ChatHistoryResponse)

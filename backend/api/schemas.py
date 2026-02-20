@@ -130,3 +130,79 @@ class WSOutgoing(BaseModel):
 
 class HealthResponse(BaseModel):
     status: str
+
+
+# ---------------------------------------------------------------------------
+# Rebalancing schemas
+# ---------------------------------------------------------------------------
+
+
+class RebalancingTradeResponse(BaseModel):
+    ticker: str
+    asset_class: str
+    action: str
+    shares: float
+    value: float
+
+
+class RebalancingResponse(BaseModel):
+    client_id: str
+    current_allocation: dict[str, float]
+    target_allocation: dict[str, float]
+    drift: dict[str, float]
+    trades: list[RebalancingTradeResponse]
+    total_buy_value: float
+    total_sell_value: float
+
+
+# ---------------------------------------------------------------------------
+# Tax-loss harvesting schemas
+# ---------------------------------------------------------------------------
+
+
+class TaxLossCandidateResponse(BaseModel):
+    ticker: str
+    shares: float
+    cost_basis_per_share: float
+    current_price: float
+    unrealized_return_pct: float
+    unrealized_loss: float
+
+
+class TaxLossResponse(BaseModel):
+    client_id: str
+    candidates: list[TaxLossCandidateResponse]
+    total_harvestable_loss: float
+    estimated_tax_savings: float
+
+
+# ---------------------------------------------------------------------------
+# Performance history schemas
+# ---------------------------------------------------------------------------
+
+
+class PerformancePoint(BaseModel):
+    date: str
+    value: float
+
+
+class PerformanceHistoryResponse(BaseModel):
+    client_id: str
+    history: list[PerformancePoint]
+
+
+# ---------------------------------------------------------------------------
+# Holdings detail schemas
+# ---------------------------------------------------------------------------
+
+
+class HoldingDetailResponse(BaseModel):
+    ticker: str
+    shares: float
+    cost_basis: float
+    current_price: float
+    market_value: float
+    unrealized_pnl: float
+    unrealized_pnl_pct: float
+    asset_class: str
+    sector: str

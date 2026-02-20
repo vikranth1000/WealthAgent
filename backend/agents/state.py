@@ -119,6 +119,7 @@ class WealthAgentState(TypedDict, total=False):
     """
 
     client_id: str
+    client_name: str
     query: str
     persona: str
     portfolio_analysis: Optional[PortfolioAnalysis]

@@ -1,11 +1,18 @@
 import { useState } from 'react'
 import { ChevronUp, ChevronDown } from 'lucide-react'
 
-const COLS = [
+const BASE_COLS = [
   { key: 'ticker', label: 'Ticker' },
   { key: 'shares', label: 'Shares' },
   { key: 'asset_class', label: 'Class' },
-  { key: 'sector', label: 'Sector' },
+]
+
+const ENHANCED_COLS = [
+  { key: 'ticker', label: 'Ticker' },
+  { key: 'shares', label: 'Shares' },
+  { key: 'current_price', label: 'Price' },
+  { key: 'market_value', label: 'Value' },
+  { key: 'unrealized_pnl', label: 'P&L' },
 ]
 
 function SortIcon({ active, dir }) {
@@ -13,19 +20,43 @@ function SortIcon({ active, dir }) {
   return dir === 'asc' ? <ChevronDown size={10} className="text-teal" /> : <ChevronUp size={10} className="text-teal" />
 }
 
-// Props: holdings — array of { ticker, shares, cost_basis, asset_class, sector }
-// Click column headers to sort. Zebra-striped rows.
-export default function HoldingsTable({ holdings = [] }) {
+function formatCell(key, value) {
+  if (value == null) return '—'
+  if (key === 'shares') return typeof value === 'number' ? value.toFixed(1) : value
+  if (key === 'current_price') return `$${value.toFixed(2)}`
+  if (key === 'market_value') return `$${Math.round(value).toLocaleString()}`
+  if (key === 'unrealized_pnl') {
+    const prefix = value >= 0 ? '+' : ''
+    return `${prefix}$${Math.round(value).toLocaleString()}`
+  }
+  if (key === 'unrealized_pnl_pct') {
+    const prefix = value >= 0 ? '+' : ''
+    return `${prefix}${value.toFixed(1)}%`
+  }
+  return String(value)
+}
+
+function cellColor(key, value) {
+  if (key === 'unrealized_pnl' || key === 'unrealized_pnl_pct') {
+    return value >= 0 ? 'text-green-600' : 'text-red-500'
+  }
+  return ''
+}
+
+// Props: holdings — array, enhanced — boolean (if true, data includes price/value/pnl)
+export default function HoldingsTable({ holdings = [], enhanced = false }) {
   const [sortKey, setSortKey] = useState('ticker')
   const [sortDir, setSortDir] = useState('asc')
 
   if (!holdings.length) {
     return (
-      <div className="text-gray-400 text-sm text-center py-4 rounded-lg bg-gray-50 border border-gray-200">
+      <div className="text-gray-400 text-sm text-center py-4 rounded-xl bg-gray-50 border border-gray-200">
         No holdings
       </div>
     )
   }
+
+  const COLS = enhanced ? ENHANCED_COLS : BASE_COLS
 
   function handleSort(key) {
     if (sortKey === key) {
@@ -45,7 +76,7 @@ export default function HoldingsTable({ holdings = [] }) {
   })
 
   return (
-    <div className="overflow-x-auto rounded border border-gray-200">
+    <div className="overflow-x-auto rounded-xl border border-gray-200">
       <table className="w-full text-xs">
         <thead className="bg-gray-50 border-b border-gray-200">
           <tr>
@@ -66,12 +97,16 @@ export default function HoldingsTable({ holdings = [] }) {
         <tbody>
           {sorted.map((h, i) => (
             <tr key={h.ticker || i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-              <td className="px-2 py-1.5 font-semibold text-navy">{h.ticker}</td>
-              <td className="px-2 py-1.5 text-gray-600">
-                {typeof h.shares === 'number' ? h.shares.toFixed(2) : h.shares}
-              </td>
-              <td className="px-2 py-1.5 text-gray-600">{h.asset_class}</td>
-              <td className="px-2 py-1.5 text-gray-500">{h.sector}</td>
+              {COLS.map(({ key }) => (
+                <td
+                  key={key}
+                  className={`px-2 py-1.5 ${
+                    key === 'ticker' ? 'font-semibold text-navy' : `text-gray-600 ${cellColor(key, h[key])}`
+                  } ${key === 'unrealized_pnl' ? 'font-medium' : ''}`}
+                >
+                  {key === 'ticker' ? h.ticker : formatCell(key, h[key])}
+                </td>
+              ))}
             </tr>
           ))}
         </tbody>

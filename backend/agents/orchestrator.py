@@ -3,10 +3,10 @@
 Flow per PRD §2:
     START → route_query (LLM classifier)
       ├── "portfolio"    → Portfolio Agent → Comms Agent → END
-      ├── "market"       → Market Agent → Comms Agent → END
-      ├── "full_review"  → Portfolio Agent → Market Agent → Comms Agent → END
-      └── "general"      → Comms Agent (direct) → END
+      ├── "market"       → Portfolio Agent → Market Agent → Comms Agent → END
+      └── "full_review"  → Portfolio Agent → Market Agent → Comms Agent → END
 
+Portfolio agent always runs so the comms agent always has real client data.
 The orchestrator routes but does NOT process. No business logic lives here.
 """
 
@@ -34,36 +34,41 @@ _ROUTE_MODEL = "claude-sonnet-4-20250514"
 
 _ROUTE_SYSTEM_PROMPT = """\
 You are a query intent classifier for a wealth management assistant.
+Every query comes from an advisor managing a specific client's portfolio.
 Classify the user's query into EXACTLY one of these categories:
 
 - portfolio: Questions about the client's holdings, allocation, performance, \
-rebalancing, tax-loss harvesting, risk metrics, Sharpe ratio, returns, or \
-any specific analysis of their portfolio.
-- market: Questions about market conditions, news, macro indicators, sector \
-performance, interest rates, or economic outlook.
+rebalancing, tax-loss harvesting, risk metrics, Sharpe ratio, returns, \
+investment advice, financial education, or any question that benefits from \
+having the client's portfolio context.
+- market: Questions specifically about market conditions, news, macro indicators, \
+sector performance, interest rates, economic outlook, or specific stock/sector \
+research that also benefits from portfolio context.
 - full_review: Requests for a comprehensive review that combine both portfolio \
-analysis AND market context (e.g. "Give me a full report", "How should I \
+analysis AND market context (e.g. "Give me a full report", "How should we \
 position given the market?", "Complete portfolio review").
-- general: Greetings, general financial education questions, or anything that \
-does not require portfolio data or market research.
+
+When in doubt, choose "portfolio" — the advisor always benefits from seeing \
+client data alongside any response.
 
 Respond with ONLY the category name, nothing else."""
 
-QueryIntent = Literal["portfolio", "market", "full_review", "general"]
+QueryIntent = Literal["portfolio", "market", "full_review"]
 
-_VALID_INTENTS: set[str] = {"portfolio", "market", "full_review", "general"}
+_VALID_INTENTS: set[str] = {"portfolio", "market", "full_review"}
 
 
 async def classify_intent(query: str) -> QueryIntent:
-    """Classify user query into one of four routing intents.
+    """Classify user query into one of three routing intents.
 
-    Uses a lightweight LLM call. Falls back to "general" on any failure.
+    Uses a lightweight LLM call. Falls back to "portfolio" on any failure
+    so the comms agent always has real portfolio data.
 
     Args:
         query: The raw user message.
 
     Returns:
-        One of: "portfolio", "market", "full_review", "general".
+        One of: "portfolio", "market", "full_review".
     """
     try:
         client = anthropic.AsyncAnthropic(api_key=settings.anthropic_api_key)
@@ -80,14 +85,14 @@ async def classify_intent(query: str) -> QueryIntent:
             return intent  # type: ignore[return-value]
 
         logger.warning(
-            "classify_intent: unexpected response %r — defaulting to general",
+            "classify_intent: unexpected response %r — defaulting to portfolio",
             intent,
         )
-        return "general"
+        return "portfolio"
 
     except Exception as exc:
-        logger.error("classify_intent: LLM call failed (%s) — defaulting to general", exc)
-        return "general"
+        logger.error("classify_intent: LLM call failed (%s) — defaulting to portfolio", exc)
+        return "portfolio"
 
 
 # ---------------------------------------------------------------------------
@@ -107,26 +112,6 @@ async def route_query_node(state: WealthAgentState) -> dict[str, Any]:
     query = state.get("query", "")
     intent = await classify_intent(query)
     return {"current_agent": "orchestrator", "_intent": intent}
-
-
-def _route_decision(state: dict) -> str:
-    """Conditional edge function — reads _intent from state to pick the next node.
-
-    Args:
-        state: Current state dict (includes _intent set by route_query_node).
-
-    Returns:
-        Name of the next node to execute.
-    """
-    intent = state.get("_intent", "general")
-    if intent == "portfolio":
-        return "portfolio_analyzer"
-    elif intent == "market":
-        return "market_research"
-    elif intent == "full_review":
-        return "portfolio_analyzer"  # portfolio first, then market
-    else:
-        return "comms"
 
 
 # ---------------------------------------------------------------------------
@@ -152,20 +137,12 @@ def build_graph() -> StateGraph:
     # Entry point
     graph.set_entry_point("route_query")
 
-    # Conditional routing from route_query
-    graph.add_conditional_edges(
-        "route_query",
-        _route_decision,
-        {
-            "portfolio_analyzer": "portfolio_analyzer",
-            "market_research": "market_research",
-            "comms": "comms",
-        },
-    )
+    # All queries start with portfolio analysis
+    graph.add_edge("route_query", "portfolio_analyzer")
 
-    # After portfolio_analyzer: check if full_review → market, else → comms
+    # After portfolio: market or full_review → market_research, else → comms
     def _after_portfolio(state: dict) -> str:
-        if state.get("_intent") == "full_review":
+        if state.get("_intent") in ("market", "full_review"):
             return "market_research"
         return "comms"
 
@@ -210,6 +187,7 @@ async def run_orchestrator(
     """
     initial_state: dict[str, Any] = {
         "client_id": client_id,
+        "client_name": "",
         "query": query,
         "persona": persona,
         "chat_history": chat_history or [],
@@ -263,6 +241,7 @@ async def run_orchestrator_streaming(
 
     initial_state: dict[str, Any] = {
         "client_id": client_id,
+        "client_name": "",
         "query": query,
         "persona": persona,
         "chat_history": chat_history or [],
@@ -280,16 +259,16 @@ async def run_orchestrator_streaming(
         "orchestrator_streaming: intent=%s client=%s", intent, client_id
     )
 
-    # --- Run non-comms agents normally ---
-    if intent in ("portfolio", "full_review"):
-        yield ("agent_start", "portfolio_analyzer")
-        try:
-            update = await portfolio_analyzer_node(initial_state)
-            initial_state.update(update)
-        except Exception as exc:
-            logger.error("orchestrator_streaming: portfolio agent failed: %s", exc)
-            initial_state["error"] = str(exc)
+    # --- Portfolio agent always runs ---
+    yield ("agent_start", "portfolio_analyzer")
+    try:
+        update = await portfolio_analyzer_node(initial_state)
+        initial_state.update(update)
+    except Exception as exc:
+        logger.error("orchestrator_streaming: portfolio agent failed: %s", exc)
+        initial_state["error"] = str(exc)
 
+    # --- Market agent runs for market or full_review intents ---
     if intent in ("market", "full_review"):
         yield ("agent_start", "market_research")
         try:
@@ -307,6 +286,15 @@ async def run_orchestrator_streaming(
         full_response += chunk
         yield ("chunk", chunk)
 
+    # Generate follow-up suggestions (lightweight, non-blocking for UX)
+    from agents.comms_agent import generate_follow_up_suggestions
+
+    suggestions = await generate_follow_up_suggestions(
+        query=query,
+        response_summary=full_response[:300],
+        persona=persona,
+    )
+
     # Build final report
     report = {
         "greeting": "",
@@ -318,5 +306,6 @@ async def run_orchestrator_streaming(
     }
     initial_state["client_report"] = report
     initial_state["current_agent"] = "comms"
+    initial_state["suggestions"] = suggestions
 
     yield ("done", initial_state)

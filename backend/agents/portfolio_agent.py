@@ -47,7 +47,7 @@ from analytics.portfolio import (
 from analytics.rebalancing import allocation_drift, rebalancing_trades
 from analytics.tax_loss import tax_loss_candidates
 from data.database import AsyncSessionLocal
-from data.models import Portfolio
+from data.models import Client, Portfolio
 
 logger = logging.getLogger(__name__)
 
@@ -251,6 +251,14 @@ async def portfolio_analyzer_node(state: WealthAgentState) -> dict[str, Any]:
     # -----------------------------------------------------------------------
     try:
         async with AsyncSessionLocal() as session:
+            # Load client name
+            client_row = await session.execute(
+                select(Client).where(Client.id == client_id)
+            )
+            client_obj = client_row.scalar_one_or_none()
+            if client_obj:
+                result["client_name"] = client_obj.name
+
             stmt = (
                 select(Portfolio)
                 .where(Portfolio.client_id == client_id)
