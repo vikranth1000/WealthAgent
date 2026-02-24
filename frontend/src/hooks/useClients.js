@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { api } from '../services/api.js'
+import { seedAnalysisCache, prefetchPortfolio } from './usePortfolio.js'
 
 const PERSONA_META = {
   conservative_retiree: {
@@ -53,6 +54,8 @@ export function useClients() {
             try {
               const analysis = await api.getAnalysis(c.id)
               totalValue = analysis.total_value
+              // Pre-seed portfolio cache so usePortfolio doesn't re-fetch analysis
+              seedAnalysisCache(c.id, analysis)
             } catch {
               // analysis unavailable — leave totalValue null
             }
@@ -78,7 +81,18 @@ export function useClients() {
           })
         )
 
-        if (!cancelled) setClients(enriched)
+        if (!cancelled) {
+          setClients(enriched)
+
+          // Background-prefetch full portfolio data for all clients.
+          // Stagger requests so we don't saturate the network while the
+          // selected client's data is loading.
+          enriched.forEach((c, i) => {
+            setTimeout(() => {
+              if (!cancelled) prefetchPortfolio(c.id)
+            }, (i + 1) * 400)
+          })
+        }
       } catch (err) {
         if (!cancelled) setError(err.message)
       } finally {

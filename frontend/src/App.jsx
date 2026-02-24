@@ -4,6 +4,7 @@ import Header from './components/Layout/Header.jsx'
 import RightPanel from './components/Layout/RightPanel.jsx'
 import ChatWindow from './components/Chat/ChatWindow.jsx'
 import { useClients } from './hooks/useClients.js'
+import { usePortfolio } from './hooks/usePortfolio.js'
 
 const MIN_SIDEBAR_WIDTH = 220
 const MAX_SIDEBAR_WIDTH = 420
@@ -17,6 +18,7 @@ function clamp(value, min, max) {
 export default function App() {
   const { clients, loading: clientsLoading } = useClients()
   const [selectedClient, setSelectedClient] = useState(null)
+  const portfolioData = usePortfolio(selectedClient?.id)
   const [rightPanelOpen, setRightPanelOpen] = useState(true)
   const [sidebarWidth, setSidebarWidth] = useState(260)
   const [rightPanelWidth, setRightPanelWidth] = useState(320)
@@ -96,7 +98,7 @@ export default function App() {
         />
         <main className="flex-1 flex flex-col overflow-hidden bg-white border-x border-gray-200">
           {selectedClient ? (
-            <ChatWindow client={selectedClient} />
+            <ChatWindow client={selectedClient} portfolioData={portfolioData} />
           ) : (
             <div className="flex-1 flex items-center justify-center text-gray-400 text-sm">
               {clientsLoading ? 'Loading clients...' : 'Select a client to begin'}
@@ -106,6 +108,7 @@ export default function App() {
         {selectedClient && (
           <RightPanel
             client={selectedClient}
+            portfolioData={portfolioData}
             isOpen={rightPanelOpen}
             onClose={() => setRightPanelOpen(false)}
             width={rightPanelWidth}

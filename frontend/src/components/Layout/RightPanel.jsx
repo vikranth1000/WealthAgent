@@ -1,5 +1,4 @@
 import { X } from 'lucide-react'
-import { usePortfolio } from '../../hooks/usePortfolio.js'
 import MetricCards from '../Dashboard/MetricCards.jsx'
 import AllocationChart from '../Dashboard/AllocationChart.jsx'
 import PerformanceChart from '../Dashboard/PerformanceChart.jsx'
@@ -40,8 +39,8 @@ function LoadingSkeleton() {
   )
 }
 
-export default function RightPanel({ client, isOpen, onClose, width, onResizeStart }) {
-  const { portfolio, analysis, performanceHistory, holdingsDetail, loading, error } = usePortfolio(client?.id)
+export default function RightPanel({ client, portfolioData, isOpen, onClose, width, onResizeStart }) {
+  const { portfolio, analysis, performanceHistory, holdingsDetail, loading, error } = portfolioData
 
   if (!isOpen) return null
 

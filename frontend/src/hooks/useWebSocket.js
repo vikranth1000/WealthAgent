@@ -3,6 +3,9 @@ import { api } from '../services/api'
 
 const WS_BASE = `ws://${window.location.host}/ws/chat`
 
+// Module-level chat history cache: clientId -> messages[]
+const chatCache = new Map()
+
 // Hook for WebSocket chat streaming
 // Returns: { send, stop, messages, activeAgent, isConnected }
 export function useWebSocket(clientId) {
@@ -16,13 +19,21 @@ export function useWebSocket(clientId) {
   const lastSentRef = useRef('')
   const sessionRef = useRef(0)
   const connectRef = useRef(null) // stores the current connect function
+  const clientIdRef = useRef(clientId)
+  clientIdRef.current = clientId
+
+  // Persist messages to cache whenever they change
+  useEffect(() => {
+    if (clientIdRef.current && messages.length > 0) {
+      chatCache.set(clientIdRef.current, messages)
+    }
+  }, [messages])
 
   useEffect(() => {
     const session = ++sessionRef.current
 
     // Clear state immediately
     setActiveAgent(null)
-    setMessages([])
     setIsConnected(false)
     setSuggestions([])
     lastSentRef.current = ''
@@ -36,11 +47,20 @@ export function useWebSocket(clientId) {
     }
 
     if (!clientId) {
+      setMessages([])
       connectRef.current = null
       return
     }
 
-    // Load persisted chat history
+    // Restore from cache immediately if available
+    const cached = chatCache.get(clientId)
+    if (cached && cached.length > 0) {
+      setMessages(cached)
+    } else {
+      setMessages([])
+    }
+
+    // Load persisted chat history from server (reconciles with cache)
     api.getChatHistory(clientId)
       .then((data) => {
         if (sessionRef.current !== session) return
@@ -49,7 +69,11 @@ export function useWebSocket(clientId) {
           content: m.content,
           agent: m.agent,
         }))
-        setMessages(loaded)
+        // Only update if server has data and it differs from cache
+        if (loaded.length > 0) {
+          setMessages(loaded)
+          chatCache.set(clientId, loaded)
+        }
       })
       .catch(() => {})
 
@@ -187,18 +211,21 @@ export function useWebSocket(clientId) {
       return []
     })
     setSuggestions([])
+    chatCache.delete(clientId)
 
     try {
       await api.clearChatHistory(clientId)
     } catch {
       // If server delete fails, restore messages
       setMessages(backup)
+      chatCache.set(clientId, backup)
       return null
     }
 
     // Return a restore function the caller can use for undo
     return () => {
       setMessages(backup)
+      chatCache.set(clientId, backup)
     }
   }, [clientId])
 

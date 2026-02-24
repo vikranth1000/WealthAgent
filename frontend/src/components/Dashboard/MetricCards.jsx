@@ -1,11 +1,7 @@
-// Props: metrics { totalValue, ytdReturn, sharpe, maxDrawdown }
-// totalValue: number → "$1,218,400"
-// ytdReturn: fraction (0.018) → "+1.8%" green / red
-// sharpe: number → "0.82"
-// maxDrawdown: fraction (-0.038) → "-3.8%"
+import { useAnimatedValue } from '../../hooks/useAnimatedValue'
 
 function formatValue(key, value) {
-  if (value == null) return '—'
+  if (value == null) return '\u2014'
   switch (key) {
     case 'totalValue':
       return `$${Math.round(value).toLocaleString()}`
@@ -28,6 +24,19 @@ function valueColor(key, value) {
   return 'text-navy'
 }
 
+function AnimatedCard({ label, rawValue, formatKey }) {
+  const animated = useAnimatedValue(rawValue)
+
+  return (
+    <div className="bg-white rounded-xl border border-gray-200 px-3 py-2.5">
+      <p className="text-[11px] text-gray-500">{label}</p>
+      <p className={`text-[15px] font-bold mt-0.5 tabular-nums ${valueColor(formatKey, rawValue)}`}>
+        {formatValue(formatKey, rawValue != null ? animated : null)}
+      </p>
+    </div>
+  )
+}
+
 export default function MetricCards({ metrics = {} }) {
   const cards = [
     { key: 'totalValue', label: 'Total Value' },
@@ -38,17 +47,14 @@ export default function MetricCards({ metrics = {} }) {
 
   return (
     <div className="grid grid-cols-2 gap-2">
-      {cards.map(({ key, label }) => {
-        const raw = metrics[key] ?? null
-        return (
-          <div key={key} className="bg-white rounded-xl border border-gray-200 px-3 py-2.5">
-            <p className="text-[11px] text-gray-500">{label}</p>
-            <p className={`text-[15px] font-bold mt-0.5 ${valueColor(key, raw)}`}>
-              {formatValue(key, raw)}
-            </p>
-          </div>
-        )
-      })}
+      {cards.map(({ key, label }) => (
+        <AnimatedCard
+          key={key}
+          label={label}
+          rawValue={metrics[key] ?? null}
+          formatKey={key}
+        />
+      ))}
     </div>
   )
 }
