@@ -59,10 +59,10 @@ Every user query is classified by an LLM router, then routed through the appropr
 
 ```
 User Query → Intent Classifier (Claude, max_tokens=20)
-  │
-  ├── "portfolio"    → Portfolio Analyzer → Comms Agent → Stream Response
-  ├── "market"       → Portfolio Analyzer → Market Researcher → Comms Agent → Stream Response
-  └── "full_review"  → Portfolio Analyzer → Market Researcher → Comms Agent → Stream Response
+ │
+ ├── "portfolio"    → Portfolio Analyzer → Comms Agent → Stream Response
+ ├── "market"       → Portfolio Analyzer → Market Researcher → Comms Agent → Stream Response
+ └── "full_review"  → Portfolio Analyzer → Market Researcher → Comms Agent → Stream Response
 ```
 
 - **Portfolio Analyzer** — Loads holdings from DB, fetches live prices, computes returns, allocation, risk metrics, rebalancing trades, and tax-loss candidates
