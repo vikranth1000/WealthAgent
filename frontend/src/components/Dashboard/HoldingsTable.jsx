@@ -78,12 +78,12 @@ export default function HoldingsTable({ holdings = [], enhanced = false }) {
   return (
     <div className="overflow-x-auto rounded-xl border border-gray-200">
       <table className="w-full text-xs">
-        <thead className="bg-gray-50 border-b border-gray-200">
+        <thead className="bg-gradient-to-r from-gray-50 to-gray-100/50 border-b border-gray-200">
           <tr>
             {COLS.map(({ key, label }) => (
               <th
                 key={key}
-                className="px-2 py-2 text-left font-semibold text-gray-500 cursor-pointer select-none hover:bg-gray-100 transition-colors"
+                className="px-2 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-gray-400 cursor-pointer select-none hover:bg-gray-100 transition-colors"
                 onClick={() => handleSort(key)}
               >
                 <span className="flex items-center gap-1">
@@ -96,7 +96,7 @@ export default function HoldingsTable({ holdings = [], enhanced = false }) {
         </thead>
         <tbody>
           {sorted.map((h, i) => (
-            <tr key={h.ticker || i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+            <tr key={h.ticker || i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50/70'}>
               {COLS.map(({ key }) => (
                 <td
                   key={key}

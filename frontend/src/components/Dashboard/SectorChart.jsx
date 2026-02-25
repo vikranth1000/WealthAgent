@@ -4,7 +4,7 @@ import { useAnimatedObject } from '../../hooks/useAnimatedValue'
 
 // Props: data — object like { "Technology": 0.45, "Fixed Income": 0.3, ... }
 export default function SectorChart({ data }) {
-  const animated = useAnimatedObject(data, 1400)
+  const animated = useAnimatedObject(data, 700)
 
   // Only include rows present in the target data so ghost sectors
   // don't linger in the Y-axis while they animate out.

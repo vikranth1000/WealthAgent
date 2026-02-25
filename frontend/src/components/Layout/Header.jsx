@@ -9,7 +9,7 @@ const PERSONA_COLORS = {
 
 export default function Header({ client, rightPanelOpen, onTogglePanel }) {
   return (
-    <header className="flex items-center justify-between h-14 px-5 bg-navy text-white shrink-0 shadow-md z-10">
+    <header className="flex items-center justify-between h-14 px-5 bg-gradient-to-r from-navy to-[#243352] text-white shrink-0 shadow-lg z-10">
       <div className="flex items-center gap-2.5">
         <div className="flex items-center justify-center w-8 h-8 bg-teal rounded-lg">
           <span className="text-white font-bold text-sm">W</span>
@@ -36,7 +36,11 @@ export default function Header({ client, rightPanelOpen, onTogglePanel }) {
 
       <button
         onClick={onTogglePanel}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-gray-200 hover:bg-white/10 transition-colors"
+        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-colors ${
+          rightPanelOpen
+            ? 'bg-white/15 text-white shadow-inner'
+            : 'text-gray-300 hover:bg-white/10 hover:text-white'
+        }`}
         title={rightPanelOpen ? 'Hide dashboard' : 'Show dashboard'}
       >
         <LayoutDashboard size={15} />

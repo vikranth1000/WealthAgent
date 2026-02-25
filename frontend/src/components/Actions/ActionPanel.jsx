@@ -61,12 +61,12 @@ export default function ActionPanel({ action, clientId, analysis, onClose, onSen
     <>
       {/* Backdrop */}
       <div
-        className="absolute inset-0 z-20 bg-gray-900/20 backdrop-blur-[2px]"
+        className="absolute inset-0 z-20 bg-gray-900/25 backdrop-blur-[3px]"
         onClick={onClose}
       />
 
       {/* Floating panel */}
-      <div className="absolute inset-x-4 top-4 z-30 max-h-[calc(100%-32px)] overflow-y-auto">
+      <div className="absolute inset-x-4 top-4 z-30 max-h-[calc(100%-32px)] overflow-y-auto drop-shadow-xl">
         {loading && (
           <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-lg">
             <div className="flex items-center gap-3">

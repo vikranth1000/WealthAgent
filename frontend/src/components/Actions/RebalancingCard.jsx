@@ -8,7 +8,7 @@ function AllocationBar({ label, current, target }) {
   return (
     <div className="flex items-center gap-2 text-xs">
       <span className="w-24 text-gray-600 truncate">{label}</span>
-      <div className="flex-1 bg-gray-100 rounded-full h-2 relative overflow-hidden">
+      <div className="flex-1 bg-gray-100 rounded-full h-2.5 relative overflow-hidden">
         <div
           className="absolute inset-y-0 left-0 bg-teal/60 rounded-full"
           style={{ width: `${Math.min(current * 100, 100)}%` }}
@@ -54,7 +54,7 @@ export default function RebalancingCard({ data, onClose, onAskAI }) {
         </button>
       </div>
 
-      <div className="p-4 space-y-4">
+      <div className="p-4 space-y-3.5">
         {/* Allocation comparison */}
         <div>
           <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">

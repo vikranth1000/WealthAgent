@@ -8,7 +8,7 @@ import HoldingsTable from '../Dashboard/HoldingsTable.jsx'
 function Section({ title, children }) {
   return (
     <div>
-      <h3 className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2">
+      <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">
         {title}
       </h3>
       {children}
@@ -91,7 +91,7 @@ export default function RightPanel({ client, portfolioData, isOpen, onClose, wid
       )}
 
       {!loading && !error && (
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        <div key={client?.id} className="flex-1 overflow-y-auto p-4 space-y-4">
           <MetricCards metrics={metrics} />
 
           <Section title="Asset Allocation">

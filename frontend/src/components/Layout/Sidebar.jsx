@@ -34,7 +34,7 @@ function RiskBar({ value }) {
       {Array.from({ length: 10 }).map((_, i) => (
         <div
           key={i}
-          className={`h-1 flex-1 rounded-full ${i < filled ? 'bg-teal' : 'bg-gray-200'}`}
+          className={`h-1.5 flex-1 rounded-full ${i < filled ? 'bg-teal' : 'bg-gray-200'}`}
         />
       ))}
     </div>
@@ -48,9 +48,9 @@ function ClientCard({ client, isSelected, onClick }) {
   return (
     <button
       onClick={onClick}
-      className={`w-full text-left p-3 rounded-xl border transition-all duration-150 ${
+      className={`w-full text-left p-3.5 rounded-xl border transition-all duration-150 ${
         isSelected
-          ? `border-l-4 ${meta.border} bg-white shadow-sm`
+          ? `border-l-[5px] ${meta.border} bg-white shadow-md ring-1 ring-gray-100`
           : 'border border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm'
       }`}
     >
@@ -64,9 +64,9 @@ function ClientCard({ client, isSelected, onClick }) {
           <p className="text-[13px] font-semibold text-gray-900 truncate">{client.name}</p>
           <p className="text-[11px] text-gray-500 truncate">{client.occupation}</p>
           <span
-            className={`inline-flex items-center gap-1 mt-1 text-[10px] font-medium px-1.5 py-0.5 rounded-md ${meta.badge}`}
+            className={`inline-flex items-center gap-1 mt-1.5 text-[10px] font-medium px-1.5 py-0.5 rounded-md ${meta.badge}`}
           >
-            <Icon size={9} />
+            <Icon size={10} />
             {client.personaLabel}
           </span>
         </div>

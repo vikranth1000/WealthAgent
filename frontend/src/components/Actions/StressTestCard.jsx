@@ -40,7 +40,7 @@ function ImpactBar({ value }) {
 
   return (
     <div className="flex items-center gap-2">
-      <div className="flex-1 h-3 bg-gray-100 rounded-full relative overflow-hidden">
+      <div className="flex-1 h-3.5 bg-gray-100 rounded-full relative overflow-hidden">
         <div
           className={`absolute inset-y-0 left-0 rounded-full transition-all ${
             isNeg ? 'bg-red-400' : 'bg-green-400'
@@ -79,7 +79,7 @@ export default function StressTestCard({ allocation, totalValue, onClose, onAskA
           const dollarImpact = (totalValue || 0) * impact
 
           return (
-            <div key={scenario.name} className="rounded-xl border border-gray-200 p-3">
+            <div key={scenario.name} className="rounded-xl border border-gray-200 p-3 hover:border-gray-300 transition-colors">
               <div className="mb-1.5 flex items-start justify-between">
                 <div>
                   <p className="text-xs font-semibold text-gray-800">{scenario.name}</p>

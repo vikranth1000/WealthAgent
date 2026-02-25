@@ -119,11 +119,11 @@ export default function ChatWindow({ client, portfolioData }) {
       {messages.length === 0 && !activeAction ? (
         /* Empty state */
         <div className="flex-1 flex flex-col items-center justify-center px-8 text-center overflow-y-auto">
-          <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-teal/10">
-            <MessageSquare size={22} className="text-teal" />
+          <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-teal/15 to-teal/5 shadow-sm">
+            <MessageSquare size={24} className="text-teal" />
           </div>
-          <h3 className="mb-1 text-lg font-semibold text-navy">Chat with WealthAgent</h3>
-          <p className="mb-6 max-w-sm text-sm leading-relaxed text-gray-500">
+          <h3 className="mb-1.5 text-lg font-semibold text-navy">Chat with WealthAgent</h3>
+          <p className="mb-6 max-w-sm text-sm leading-relaxed text-gray-400">
             Ask anything about {client?.name ?? 'your client'}&apos;s portfolio, performance, or
             market conditions.
           </p>
@@ -193,8 +193,8 @@ export default function ChatWindow({ client, portfolioData }) {
 
               {/* Popover menu */}
               {actionsOpen && (
-                <div className="absolute bottom-full left-0 mb-2 w-64 rounded-xl border border-gray-200 bg-white shadow-xl overflow-hidden z-50">
-                  <div className="flex items-center justify-between px-3 py-2 border-b border-gray-100 bg-gray-50">
+                <div className="absolute bottom-full left-0 mb-2 w-64 rounded-xl border border-gray-200 bg-white shadow-2xl overflow-hidden z-50 ring-1 ring-black/5">
+                  <div className="flex items-center justify-between px-3 py-2.5 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
                     <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">AI Actions</span>
                     <button onClick={() => setActionsOpen(false)} className="text-gray-400 hover:text-gray-600">
                       <X size={12} />

@@ -23,7 +23,7 @@ export default function ChatInput({ value, onChange, onSubmit, onStop, disabled,
         onKeyDown={handleKey}
         disabled={disabled && !isGenerating}
         placeholder={placeholder ?? 'Ask WealthAgent\u2026'}
-        className="h-10 flex-1 rounded-xl border border-gray-200 bg-gray-50 px-3.5 text-sm text-gray-700 outline-none transition-all placeholder:text-gray-400 focus:border-teal/50 focus:bg-white focus:ring-2 focus:ring-teal/15 disabled:cursor-not-allowed disabled:opacity-50"
+        className="h-10 flex-1 rounded-xl border border-gray-200 bg-gray-50 px-3.5 text-sm text-gray-700 outline-none transition-all shadow-sm placeholder:text-gray-400 focus:border-teal/50 focus:bg-white focus:ring-2 focus:ring-teal/15 focus:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
       />
       {isGenerating ? (
         <button

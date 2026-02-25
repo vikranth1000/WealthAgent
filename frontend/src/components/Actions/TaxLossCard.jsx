@@ -44,15 +44,15 @@ export default function TaxLossCard({ data, onClose, onAskAI }) {
       <div className="p-4 space-y-4">
         {/* Summary callout */}
         <div className="flex gap-3">
-          <div className="flex-1 bg-red-50 rounded-xl px-3 py-2 border border-red-100">
-            <p className="text-xs text-red-400">Harvestable Loss</p>
-            <p className="text-base font-bold text-red-600">
+          <div className="flex-1 bg-gradient-to-br from-red-50 to-red-50/50 rounded-xl px-3 py-2.5 border border-red-100">
+            <p className="text-[10px] font-medium text-red-400 uppercase tracking-wide">Harvestable Loss</p>
+            <p className="text-base font-bold text-red-600 mt-0.5">
               {formatCurrency(total_harvestable_loss, { absolute: true })}
             </p>
           </div>
-          <div className="flex-1 bg-green-50 rounded-xl px-3 py-2 border border-green-100">
-            <p className="text-xs text-green-500">Est. Tax Savings</p>
-            <p className="text-base font-bold text-green-600">
+          <div className="flex-1 bg-gradient-to-br from-green-50 to-green-50/50 rounded-xl px-3 py-2.5 border border-green-100">
+            <p className="text-[10px] font-medium text-green-500 uppercase tracking-wide">Est. Tax Savings</p>
+            <p className="text-base font-bold text-green-600 mt-0.5">
               {formatCurrency(estimated_tax_savings)}
             </p>
           </div>

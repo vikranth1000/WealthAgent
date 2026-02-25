@@ -28,8 +28,8 @@ function AnimatedCard({ label, rawValue, formatKey }) {
   const animated = useAnimatedValue(rawValue)
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 px-3 py-2.5">
-      <p className="text-[11px] text-gray-500">{label}</p>
+    <div className="bg-gradient-to-br from-white to-gray-50/50 rounded-xl border border-gray-200 px-3 py-2.5 shadow-sm">
+      <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wide">{label}</p>
       <p className={`text-[15px] font-bold mt-0.5 tabular-nums ${valueColor(formatKey, rawValue)}`}>
         {formatValue(formatKey, rawValue != null ? animated : null)}
       </p>

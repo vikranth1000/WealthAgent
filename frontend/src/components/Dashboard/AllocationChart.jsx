@@ -95,7 +95,7 @@ export default function AllocationChart({ data }) {
         {legendData.map((entry, i) => (
           <div key={entry.name} className="flex items-center gap-1.5">
             <span
-              className="w-2 h-2 rounded-full shrink-0"
+              className="w-2.5 h-2.5 rounded-full shrink-0"
               style={{ backgroundColor: COLORS[i % COLORS.length] }}
             />
             <span className="text-[11px] text-gray-600">{entry.name}</span>

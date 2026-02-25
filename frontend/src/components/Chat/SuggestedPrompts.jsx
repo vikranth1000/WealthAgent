@@ -42,10 +42,10 @@ export default function SuggestedPrompts({ persona, onSelect, compact, dynamicSu
         <button
           key={prompt}
           onClick={() => onSelect?.(prompt)}
-          className={`rounded-lg border bg-white transition-colors active:scale-95 ${
+          className={`rounded-lg border transition-all active:scale-95 shadow-sm ${
             isDynamic
-              ? 'border-teal/30 text-teal hover:border-teal/50 hover:bg-teal/5'
-              : 'border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
+              ? 'border-teal/30 bg-teal/5 text-teal hover:border-teal/50 hover:bg-teal/10 hover:shadow-md'
+              : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50 hover:shadow-md'
           } ${compact ? 'px-2.5 py-1 text-xs' : 'px-3 py-1.5 text-xs'}`}
         >
           {prompt}

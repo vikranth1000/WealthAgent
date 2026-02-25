@@ -156,10 +156,10 @@ export default function MessageBubble({ role, content, streaming, error }) {
         <div
           className={`px-4 py-3 text-sm leading-6 ${
             isUser
-              ? 'whitespace-pre-wrap rounded-2xl rounded-br-md bg-navy text-white shadow-sm'
+              ? 'whitespace-pre-wrap rounded-2xl rounded-br-md bg-navy text-white shadow-md'
               : error
                 ? 'rounded-2xl rounded-bl-md border border-red-200 bg-red-50 text-red-800'
-                : 'rounded-2xl rounded-bl-md border border-gray-200 bg-white text-gray-800'
+                : 'rounded-2xl rounded-bl-md border border-gray-100 bg-white text-gray-800 shadow-sm'
           }`}
         >
           {isUser ? content : rendered}
