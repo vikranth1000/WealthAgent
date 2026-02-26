@@ -17,7 +17,6 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
-import yfinance as yf
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload
 
@@ -40,6 +39,7 @@ from analytics.portfolio import (
     Holding as AnalyticsHolding,
     current_allocation,
     get_current_prices,
+    get_historical_close,
     periodic_returns as compute_periodic_returns,
     sector_breakdown,
     total_portfolio_value,
@@ -65,6 +65,9 @@ _HISTORY_PERIOD = "1y"
 def _sync_fetch_history(tickers: list[str], period: str) -> pd.DataFrame:
     """Fetch adjusted daily close prices for *tickers* over *period*.
 
+    Uses the shared cached ``get_historical_close`` so redundant downloads
+    across endpoints and agents are avoided.
+
     Args:
         tickers: Ticker symbols to download (benchmark included by caller).
         period: yfinance period string, e.g. ``"1y"``.
@@ -73,17 +76,7 @@ def _sync_fetch_history(tickers: list[str], period: str) -> pd.DataFrame:
         DataFrame with DatetimeIndex and one column per ticker.
         Returns an empty DataFrame on failure.
     """
-    try:
-        data = yf.download(tickers, period=period, progress=False, auto_adjust=True)
-        if data.empty:
-            return pd.DataFrame()
-        close = data["Close"]
-        if isinstance(close, pd.Series):
-            close = close.to_frame(name=tickers[0])
-        return close
-    except Exception as exc:
-        logger.warning("yfinance history download failed: %s", exc)
-        return pd.DataFrame()
+    return get_historical_close(tickers, period=period)
 
 
 def _sync_get_prices(tickers: list[str]) -> dict[str, float]:
@@ -319,18 +312,22 @@ async def portfolio_analyzer_node(state: WealthAgentState) -> dict[str, Any]:
         return result
 
     # -----------------------------------------------------------------------
-    # Step 2 — Fetch current prices in thread pool (non-blocking)
+    # Step 2 — Fetch current prices + 1yr history in parallel (non-blocking)
     # -----------------------------------------------------------------------
     tickers = list({h.ticker for h in analytics_holdings})
+    fetch_tickers = list(set(tickers + [_BENCHMARK_TICKER]))
     loop = asyncio.get_event_loop()
 
     try:
-        prices: dict[str, float] = await loop.run_in_executor(
-            None, _sync_get_prices, tickers
+        prices_result, close_df = await asyncio.gather(
+            loop.run_in_executor(None, _sync_get_prices, tickers),
+            loop.run_in_executor(None, _sync_fetch_history, fetch_tickers, _HISTORY_PERIOD),
         )
+        prices: dict[str, float] = prices_result
     except Exception as exc:
-        logger.error("Price fetch failed for client %s: %s", client_id, exc)
+        logger.error("Data fetch failed for client %s: %s", client_id, exc)
         prices = {}
+        close_df = pd.DataFrame()
 
     # -----------------------------------------------------------------------
     # Step 3 — Basic portfolio metrics (no history required)
@@ -358,12 +355,6 @@ async def portfolio_analyzer_node(state: WealthAgentState) -> dict[str, Any]:
             weights = {t: v / port_value for t, v in holding_values.items() if v > 0}
         else:
             weights = {}
-
-        # Download 1yr history for all holdings + benchmark
-        fetch_tickers = list(set(tickers + [_BENCHMARK_TICKER]))
-        close_df: pd.DataFrame = await loop.run_in_executor(
-            None, _sync_fetch_history, fetch_tickers, _HISTORY_PERIOD
-        )
 
         if not close_df.empty and weights:
             port_rets_series = _weighted_portfolio_returns(close_df, weights)

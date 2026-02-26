@@ -6,7 +6,6 @@ import datetime
 from typing import Any
 
 import pandas as pd
-import yfinance as yf
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import delete, select
@@ -23,6 +22,7 @@ from analytics.portfolio import (
     Holding as AnalyticsHolding,
     current_allocation,
     get_current_prices,
+    get_historical_close,
     sector_breakdown,
     total_portfolio_value,
     total_return,
@@ -102,7 +102,7 @@ def _build_portfolio_returns(
     prices: dict[str, float],
     port_value: float,
 ) -> list[float]:
-    """Fetch 1-year daily history and compute portfolio-weighted daily returns.
+    """Compute portfolio-weighted daily returns from cached 1-year history.
 
     Args:
         holdings: Analytics holding dataclasses for the portfolio.
@@ -117,19 +117,14 @@ def _build_portfolio_returns(
         return []
 
     try:
-        hist = yf.download(tickers, period="1y", progress=False, auto_adjust=True)
-        if hist.empty or "Close" not in hist.columns:
+        close = get_historical_close(tickers, period="1y")
+        if close.empty:
             return []
-
-        close: pd.DataFrame = hist["Close"]
-        if isinstance(close, pd.Series):
-            close = close.to_frame(name=tickers[0])
 
         daily_pct = close.pct_change().dropna()
         if daily_pct.empty:
             return []
 
-        # Build weight map: (shares × price) / total_value
         weights: dict[str, float] = {}
         for h in holdings:
             price = prices.get(h.ticker, 0.0)
@@ -144,7 +139,7 @@ def _build_portfolio_returns(
         return [float(r) for r in port_series.tolist()]
 
     except Exception as exc:
-        logger.warning("Failed to fetch historical returns: %s", exc)
+        logger.warning("Failed to compute historical returns: %s", exc)
         return []
 
 
@@ -390,13 +385,9 @@ async def get_performance_history(
             weights[h.ticker] = (h.shares * price) / port_value
 
     try:
-        hist = yf.download(tickers, period="1y", progress=False, auto_adjust=True)
-        if hist.empty or "Close" not in hist.columns:
+        close = get_historical_close(tickers, period="1y")
+        if close.empty:
             return PerformanceHistoryResponse(client_id=client_id, history=[])
-
-        close: pd.DataFrame = hist["Close"]
-        if isinstance(close, pd.Series):
-            close = close.to_frame(name=tickers[0])
 
         daily_pct = close.pct_change().fillna(0.0)
 

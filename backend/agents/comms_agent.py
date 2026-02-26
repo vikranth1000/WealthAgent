@@ -118,50 +118,24 @@ def format_portfolio_for_llm(analysis: dict) -> str:
             f"(total harvestable: ${abs(total_loss):,.0f})"
         )
 
-    # Periodic performance
+    # Periodic performance (compact format to save tokens)
     periodic = analysis.get("periodic_returns", {})
     if periodic:
-        perf_parts: list[str] = []
-
+        parts: list[str] = []
         ytd = periodic.get("ytd")
         if ytd is not None:
-            perf_parts.append(f"YTD: {ytd:+.1%}")
-
-        recent = periodic.get("recent", {})
-        if recent:
-            recent_str = " | ".join(
-                f"{label} {val:+.1%}" for label, val in recent.items()
-            )
-            perf_parts.append(f"Recent: {recent_str}")
-
-        quarterly = periodic.get("quarterly", [])
-        if quarterly:
-            q_str = " | ".join(
-                f"{q['period']} {q['return_pct']:+.1%}" for q in quarterly
-            )
-            perf_parts.append(f"Quarterly: {q_str}")
-
-        monthly = periodic.get("monthly", [])
-        if monthly:
-            # Show last 6 months
-            recent_months = monthly[-6:]
-            m_str = " | ".join(
-                f"{m['period']} {m['return_pct']:+.1%}" for m in recent_months
-            )
-            perf_parts.append(f"Monthly (last 6): {m_str}")
-
+            parts.append(f"YTD {ytd:+.1%}")
+        for label, val in periodic.get("recent", {}).items():
+            parts.append(f"{label} {val:+.1%}")
+        for q in periodic.get("quarterly", []):
+            parts.append(f"{q['period']} {q['return_pct']:+.1%}")
         best = periodic.get("best_month")
         worst = periodic.get("worst_month")
         if best and worst:
-            perf_parts.append(
-                f"Best Month: {best['period']} ({best['return_pct']:+.1%}) | "
-                f"Worst Month: {worst['period']} ({worst['return_pct']:+.1%})"
-            )
-
-        if perf_parts:
-            lines.append("PERIODIC PERFORMANCE:")
-            for part in perf_parts:
-                lines.append(f"  {part}")
+            parts.append(f"Best:{best['period']}({best['return_pct']:+.1%})")
+            parts.append(f"Worst:{worst['period']}({worst['return_pct']:+.1%})")
+        if parts:
+            lines.append(f"PERFORMANCE: {' | '.join(parts)}")
 
     # Rebalancing trades
     trades = analysis.get("rebalancing_trades", [])
@@ -214,7 +188,7 @@ def _build_prompts(state: WealthAgentState) -> tuple[str, str]:
 
     market_raw = state.get("market_research")
     market_str = (
-        json.dumps(market_raw, indent=2) if market_raw is not None else ""
+        json.dumps(market_raw, separators=(",", ":")) if market_raw is not None else ""
     )
 
     history_str = format_chat_history(state.get("chat_history", []))
@@ -524,9 +498,8 @@ async def generate_follow_up_suggestions(
             ),
             timeout=10.0,
         )
-        import json as _json
         text = response.content[0].text.strip()
-        suggestions = _json.loads(text)
+        suggestions = json.loads(text)
         if isinstance(suggestions, list) and len(suggestions) >= 3:
             return [str(s) for s in suggestions[:3]]
         return []

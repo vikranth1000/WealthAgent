@@ -12,6 +12,7 @@ The orchestrator routes but does NOT process. No business logic lives here.
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from typing import Any, Literal
 
@@ -252,21 +253,29 @@ async def run_orchestrator_streaming(
         "error": None,
     }
 
-    intent = await classify_intent(query)
-    initial_state["_intent"] = intent
+    # --- Classify intent + run portfolio agent in parallel ---
+    yield ("agent_start", "portfolio_analyzer")
+
+    intent_task = asyncio.create_task(classify_intent(query))
+    portfolio_task = asyncio.create_task(portfolio_analyzer_node(initial_state))
+
+    try:
+        intent, portfolio_update = await asyncio.gather(intent_task, portfolio_task)
+        initial_state["_intent"] = intent
+        initial_state.update(portfolio_update)
+    except Exception as exc:
+        logger.error("orchestrator_streaming: parallel phase failed: %s", exc)
+        initial_state["error"] = str(exc)
+        # Ensure intent is set even on portfolio failure
+        try:
+            intent = await intent_task
+        except Exception:
+            intent = "portfolio"
+        initial_state["_intent"] = intent
 
     logger.info(
         "orchestrator_streaming: intent=%s client=%s", intent, client_id
     )
-
-    # --- Portfolio agent always runs ---
-    yield ("agent_start", "portfolio_analyzer")
-    try:
-        update = await portfolio_analyzer_node(initial_state)
-        initial_state.update(update)
-    except Exception as exc:
-        logger.error("orchestrator_streaming: portfolio agent failed: %s", exc)
-        initial_state["error"] = str(exc)
 
     # --- Market agent runs for market or full_review intents ---
     if intent in ("market", "full_review"):

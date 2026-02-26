@@ -39,6 +39,51 @@ class Holding:
 _CACHE_TTL_SECONDS: float = 3600.0
 _price_cache: dict[str, tuple[float, float]] = {}  # ticker -> (price, timestamp)
 
+# Historical close-price cache: frozenset(tickers)+period -> (DataFrame, timestamp)
+_history_cache: dict[str, tuple[pd.DataFrame, float]] = {}
+
+
+def get_historical_close(
+    tickers: list[str],
+    period: str = "1y",
+) -> pd.DataFrame:
+    """Return cached daily close prices, fetching from yfinance only on cache miss.
+
+    Args:
+        tickers: Ticker symbols to download.
+        period: yfinance period string (e.g. "1y").
+
+    Returns:
+        DataFrame with DatetimeIndex and one column per ticker.
+        Returns an empty DataFrame on failure.
+    """
+    if not tickers:
+        return pd.DataFrame()
+
+    key = f"{','.join(sorted(set(tickers)))}|{period}"
+    now = time.monotonic()
+
+    if key in _history_cache:
+        df, ts = _history_cache[key]
+        if now - ts < _CACHE_TTL_SECONDS:
+            return df
+
+    try:
+        data = yf.download(tickers, period=period, progress=False, auto_adjust=True)
+        if data.empty:
+            return pd.DataFrame()
+        close = data["Close"]
+        if isinstance(close, pd.Series):
+            close = close.to_frame(name=tickers[0])
+        _history_cache[key] = (close, now)
+        return close
+    except Exception as exc:
+        logger.warning("yfinance history download failed: %s", exc)
+        # Return stale cache if available
+        if key in _history_cache:
+            return _history_cache[key][0]
+        return pd.DataFrame()
+
 
 def _fetch_prices_yfinance(tickers: list[str]) -> dict[str, float]:
     """Batch-fetch latest close prices from yfinance.
