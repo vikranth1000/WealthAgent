@@ -53,6 +53,24 @@ class TaxLossCandidate(TypedDict):
     suggested_swap: Optional[str]
 
 
+class PeriodReturn(TypedDict):
+    """A single period's return (monthly, quarterly, etc.)."""
+
+    period: str        # e.g. "2025-Q3", "2025-09", "YTD"
+    return_pct: float  # decimal, e.g. 0.034 = 3.4%
+
+
+class PeriodicReturns(TypedDict, total=False):
+    """Time-segmented performance data for temporal queries."""
+
+    monthly: list[PeriodReturn]    # last 12 months
+    quarterly: list[PeriodReturn]  # last 4 quarters
+    ytd: float                     # YTD return as decimal
+    recent: dict[str, float]       # {"1w": 0.01, "1m": 0.03, "3m": 0.08}
+    best_month: PeriodReturn
+    worst_month: PeriodReturn
+
+
 class PortfolioAnalysis(TypedDict, total=False):
     """Output produced by the Portfolio Analyzer agent."""
 
@@ -64,6 +82,7 @@ class PortfolioAnalysis(TypedDict, total=False):
     rebalancing_trades: list[RebalancingTrade]
     tax_loss_candidates: list[TaxLossCandidate]
     risk_flags: list[str]
+    periodic_returns: PeriodicReturns
 
 
 class MarketResearch(TypedDict, total=False):

@@ -40,6 +40,7 @@ from analytics.portfolio import (
     Holding as AnalyticsHolding,
     current_allocation,
     get_current_prices,
+    periodic_returns as compute_periodic_returns,
     sector_breakdown,
     total_portfolio_value,
     total_return,
@@ -381,10 +382,17 @@ async def portfolio_analyzer_node(state: WealthAgentState) -> dict[str, Any]:
                 if len(aligned_port) >= 2:
                     metrics["beta"] = compute_beta(aligned_port, aligned_bench)
 
+        # Periodic returns (monthly, quarterly, YTD, recent trend)
+        if not close_df.empty and weights:
+            periodic = compute_periodic_returns(close_df, weights)
+        else:
+            periodic = {}
+
     except Exception as exc:
         logger.warning(
             "Time-series metrics failed for client %s: %s", client_id, exc
         )
+        periodic = {}
         # Continue with partial metrics — not a fatal error
 
     # -----------------------------------------------------------------------
@@ -458,6 +466,7 @@ async def portfolio_analyzer_node(state: WealthAgentState) -> dict[str, Any]:
         "rebalancing_trades": state_trades,
         "tax_loss_candidates": state_tax_candidates,
         "risk_flags": risk_flags,
+        **({"periodic_returns": periodic} if periodic else {}),
     }
 
     result["portfolio_analysis"] = portfolio_analysis

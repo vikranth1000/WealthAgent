@@ -118,6 +118,51 @@ def format_portfolio_for_llm(analysis: dict) -> str:
             f"(total harvestable: ${abs(total_loss):,.0f})"
         )
 
+    # Periodic performance
+    periodic = analysis.get("periodic_returns", {})
+    if periodic:
+        perf_parts: list[str] = []
+
+        ytd = periodic.get("ytd")
+        if ytd is not None:
+            perf_parts.append(f"YTD: {ytd:+.1%}")
+
+        recent = periodic.get("recent", {})
+        if recent:
+            recent_str = " | ".join(
+                f"{label} {val:+.1%}" for label, val in recent.items()
+            )
+            perf_parts.append(f"Recent: {recent_str}")
+
+        quarterly = periodic.get("quarterly", [])
+        if quarterly:
+            q_str = " | ".join(
+                f"{q['period']} {q['return_pct']:+.1%}" for q in quarterly
+            )
+            perf_parts.append(f"Quarterly: {q_str}")
+
+        monthly = periodic.get("monthly", [])
+        if monthly:
+            # Show last 6 months
+            recent_months = monthly[-6:]
+            m_str = " | ".join(
+                f"{m['period']} {m['return_pct']:+.1%}" for m in recent_months
+            )
+            perf_parts.append(f"Monthly (last 6): {m_str}")
+
+        best = periodic.get("best_month")
+        worst = periodic.get("worst_month")
+        if best and worst:
+            perf_parts.append(
+                f"Best Month: {best['period']} ({best['return_pct']:+.1%}) | "
+                f"Worst Month: {worst['period']} ({worst['return_pct']:+.1%})"
+            )
+
+        if perf_parts:
+            lines.append("PERIODIC PERFORMANCE:")
+            for part in perf_parts:
+                lines.append(f"  {part}")
+
     # Rebalancing trades
     trades = analysis.get("rebalancing_trades", [])
     if trades:

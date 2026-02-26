@@ -272,3 +272,123 @@ def sector_breakdown(
         return {}
 
     return {sec: val / total for sec, val in sector_values.items()}
+
+
+# ---------------------------------------------------------------------------
+# Periodic returns (monthly, quarterly, YTD, recent trend)
+# ---------------------------------------------------------------------------
+
+
+def periodic_returns(
+    close_df: pd.DataFrame,
+    weights: dict[str, float],
+) -> dict:
+    """Compute time-segmented portfolio returns from daily close prices.
+
+    Uses the same weighted-return approach as the portfolio agent's
+    time-series metrics, then resamples into monthly and quarterly buckets.
+
+    Args:
+        close_df: DataFrame of adjusted daily close prices (rows = dates,
+            columns = tickers). Must have a DatetimeIndex.
+        weights: Mapping of ticker to portfolio weight fraction (sums to ~1.0).
+
+    Returns:
+        Dict matching the PeriodicReturns TypedDict schema. Returns an empty
+        dict if computation fails or data is insufficient.
+    """
+    if close_df.empty or not weights:
+        return {}
+
+    try:
+        # Build weighted daily portfolio returns
+        available = [t for t in weights if t in close_df.columns]
+        if not available:
+            return {}
+
+        total_w = sum(weights[t] for t in available)
+        if total_w == 0.0:
+            return {}
+
+        norm_weights = {t: weights[t] / total_w for t in available}
+        daily_rets = close_df[available].pct_change()
+
+        port_rets = pd.Series(0.0, index=daily_rets.index)
+        for ticker in available:
+            port_rets = port_rets + daily_rets[ticker].fillna(0.0) * norm_weights[ticker]
+
+        port_rets = port_rets.iloc[1:]  # drop first NaN row
+        if len(port_rets) < 5:
+            return {}
+
+        # Cumulative return series (growth of $1)
+        cum = (1 + port_rets).cumprod()
+
+        # --- Monthly returns (last 12 months) ---
+        monthly_cum = cum.resample("ME").last()
+        monthly_list: list[dict] = []
+        for i in range(1, min(len(monthly_cum), 13)):
+            end_val = monthly_cum.iloc[-i]
+            start_val = monthly_cum.iloc[-i - 1] if i + 1 <= len(monthly_cum) else 1.0
+            period_ret = (end_val / start_val) - 1.0
+            dt = monthly_cum.index[-i]
+            monthly_list.append({
+                "period": dt.strftime("%Y-%m"),
+                "return_pct": round(float(period_ret), 5),
+            })
+        monthly_list.reverse()
+
+        # --- Quarterly returns (last 4 quarters) ---
+        quarterly_cum = cum.resample("QE").last()
+        quarterly_list: list[dict] = []
+        for i in range(1, min(len(quarterly_cum), 5)):
+            end_val = quarterly_cum.iloc[-i]
+            start_val = quarterly_cum.iloc[-i - 1] if i + 1 <= len(quarterly_cum) else 1.0
+            period_ret = (end_val / start_val) - 1.0
+            dt = quarterly_cum.index[-i]
+            q_num = (dt.month - 1) // 3 + 1
+            quarterly_list.append({
+                "period": f"{dt.year}-Q{q_num}",
+                "return_pct": round(float(period_ret), 5),
+            })
+        quarterly_list.reverse()
+
+        # --- YTD return ---
+        year_start = pd.Timestamp(cum.index[-1].year, 1, 1)
+        ytd_data = cum[cum.index >= year_start]
+        if len(ytd_data) >= 2:
+            ytd_return = float((ytd_data.iloc[-1] / ytd_data.iloc[0]) - 1.0)
+        else:
+            ytd_return = 0.0
+
+        # --- Recent trend (1w, 1m, 3m) ---
+        recent: dict[str, float] = {}
+        latest = cum.iloc[-1]
+        for label, days in [("1w", 5), ("1m", 21), ("3m", 63)]:
+            if len(cum) > days:
+                recent[label] = round(float((latest / cum.iloc[-days - 1]) - 1.0), 5)
+
+        # --- Best / worst month ---
+        best_month: dict = {}
+        worst_month: dict = {}
+        if monthly_list:
+            sorted_months = sorted(monthly_list, key=lambda m: m["return_pct"])
+            worst_month = sorted_months[0]
+            best_month = sorted_months[-1]
+
+        result: dict = {
+            "monthly": monthly_list,
+            "quarterly": quarterly_list,
+            "ytd": round(ytd_return, 5),
+            "recent": recent,
+        }
+        if best_month:
+            result["best_month"] = best_month
+        if worst_month:
+            result["worst_month"] = worst_month
+
+        return result
+
+    except Exception as exc:
+        logger.warning("periodic_returns computation failed: %s", exc)
+        return {}

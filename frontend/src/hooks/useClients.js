@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { api } from '../services/api.js'
-import { seedAnalysisCache, prefetchPortfolio } from './usePortfolio.js'
+import { seedAnalysisCache } from './usePortfolio.js'
 
 const PERSONA_META = {
   conservative_retiree: {
@@ -45,52 +45,57 @@ export function useClients() {
       try {
         const { clients: rawClients } = await api.getClients()
 
-        const enriched = await Promise.all(
-          rawClients.map(async (c) => {
-            const meta = PERSONA_META[c.persona] || PERSONA_META.conservative_retiree
-            let totalValue = null
-            let occupation = ''
+        // Show clients immediately without waiting for analysis (no yfinance)
+        const enriched = rawClients.map((c) => {
+          const meta = PERSONA_META[c.persona] || PERSONA_META.conservative_retiree
 
-            try {
-              const analysis = await api.getAnalysis(c.id)
-              totalValue = analysis.total_value
-              // Pre-seed portfolio cache so usePortfolio doesn't re-fetch analysis
-              seedAnalysisCache(c.id, analysis)
-            } catch {
-              // analysis unavailable — leave totalValue null
-            }
+          let occupation = ''
+          if (c.persona === 'conservative_retiree') occupation = 'Retired'
+          else if (c.persona === 'aggressive_growth') occupation = 'Growth Investor'
+          else if (c.persona === 'young_professional') occupation = 'Professional'
+          else if (c.persona === 'institutional') occupation = 'Institutional'
 
-            // Derive occupation from persona or goals
-            if (c.persona === 'conservative_retiree') occupation = 'Retired'
-            else if (c.persona === 'aggressive_growth') occupation = 'Growth Investor'
-            else if (c.persona === 'young_professional') occupation = 'Professional'
-            else if (c.persona === 'institutional') occupation = 'Institutional'
-
-            return {
-              id: c.id,
-              name: c.name,
-              persona: c.persona,
-              personaLabel: meta.label,
-              riskTolerance: c.risk_tolerance,
-              totalValue: totalValue != null ? formatCurrency(totalValue) : '—',
-              totalValueRaw: totalValue,
-              initials: meta.initials(c.name),
-              avatarColor: meta.avatarColor,
-              occupation,
-            }
-          })
-        )
+          return {
+            id: c.id,
+            name: c.name,
+            persona: c.persona,
+            personaLabel: meta.label,
+            riskTolerance: c.risk_tolerance,
+            totalValue: null,
+            totalValueRaw: null,
+            initials: meta.initials(c.name),
+            avatarColor: meta.avatarColor,
+            occupation,
+          }
+        })
 
         if (!cancelled) {
           setClients(enriched)
+          setLoading(false)
+        }
 
-          // Background-prefetch full portfolio data for all clients.
-          // Stagger requests so we don't saturate the network while the
-          // selected client's data is loading.
-          enriched.forEach((c, i) => {
-            setTimeout(() => {
-              if (!cancelled) prefetchPortfolio(c.id)
-            }, (i + 1) * 400)
+        // Lazily fetch analysis for each client in background to populate
+        // portfolio values. Only fetch for the sidebar display, not full prefetch.
+        for (const c of enriched) {
+          if (cancelled) break
+          api.getAnalysis(c.id).then((analysis) => {
+            if (cancelled) return
+            seedAnalysisCache(c.id, analysis)
+            setClients((prev) =>
+              prev.map((client) =>
+                client.id === c.id
+                  ? {
+                      ...client,
+                      totalValue: analysis.total_value != null
+                        ? formatCurrency(analysis.total_value)
+                        : client.totalValue,
+                      totalValueRaw: analysis.total_value ?? client.totalValueRaw,
+                    }
+                  : client
+              )
+            )
+          }).catch(() => {
+            // Analysis unavailable for this client, leave totalValue as null
           })
         }
       } catch (err) {

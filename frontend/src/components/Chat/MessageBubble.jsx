@@ -1,3 +1,6 @@
+import { parseBlocks } from './blockParser'
+import { BLOCK_COMPONENTS, BlockSkeleton } from './blocks'
+
 function parseInline(text) {
   const parts = []
   const regex = /(\*\*(.+?)\*\*|\*(.+?)\*|`([^`]+)`)/g
@@ -143,11 +146,35 @@ function appendCursor(elements) {
   return [...elements, cursor]
 }
 
+function renderContent(content, isStreaming) {
+  const segments = parseBlocks(content, isStreaming)
+  const elements = []
+
+  segments.forEach((seg, idx) => {
+    if (seg.type === 'text') {
+      elements.push(<div key={idx}>{renderMarkdown(seg.content)}</div>)
+    } else if (seg.type === 'pending-block') {
+      elements.push(<BlockSkeleton key={idx} blockType={seg.blockType} />)
+    } else {
+      const Block = BLOCK_COMPONENTS[seg.type]
+      if (Block) {
+        elements.push(
+          <div key={idx} className="my-2 -mx-1">
+            <Block data={seg.data} />
+          </div>
+        )
+      }
+    }
+  })
+
+  return elements
+}
+
 // Props: role ('user' | 'assistant'), content (string), streaming (bool), error (bool)
 export default function MessageBubble({ role, content, streaming, error }) {
   const isUser = role === 'user'
 
-  let rendered = isUser ? null : renderMarkdown(content)
+  let rendered = isUser ? null : renderContent(content, streaming)
   if (streaming && rendered) rendered = appendCursor(rendered)
 
   return (

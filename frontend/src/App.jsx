@@ -6,8 +6,6 @@ import ChatWindow from './components/Chat/ChatWindow.jsx'
 import { useClients } from './hooks/useClients.js'
 import { usePortfolio } from './hooks/usePortfolio.js'
 
-const MIN_SIDEBAR_WIDTH = 220
-const MAX_SIDEBAR_WIDTH = 420
 const MIN_RIGHT_PANEL_WIDTH = 260
 const MAX_RIGHT_PANEL_WIDTH = 540
 
@@ -20,23 +18,15 @@ export default function App() {
   const [selectedClient, setSelectedClient] = useState(null)
   const portfolioData = usePortfolio(selectedClient?.id)
   const [rightPanelOpen, setRightPanelOpen] = useState(true)
-  const [sidebarWidth, setSidebarWidth] = useState(260)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true)
   const [rightPanelWidth, setRightPanelWidth] = useState(320)
   const resizeStateRef = useRef(null)
 
   const handleResize = useCallback((event) => {
     if (!resizeStateRef.current) return
-    const { panel, startX, startWidth } = resizeStateRef.current
+    const { startX, startWidth } = resizeStateRef.current
     const delta = event.clientX - startX
-
-    if (panel === 'left') {
-      setSidebarWidth(clamp(startWidth + delta, MIN_SIDEBAR_WIDTH, MAX_SIDEBAR_WIDTH))
-      return
-    }
-
-    if (panel === 'right') {
-      setRightPanelWidth(clamp(startWidth - delta, MIN_RIGHT_PANEL_WIDTH, MAX_RIGHT_PANEL_WIDTH))
-    }
+    setRightPanelWidth(clamp(startWidth - delta, MIN_RIGHT_PANEL_WIDTH, MAX_RIGHT_PANEL_WIDTH))
   }, [])
 
   const stopResizing = useCallback(() => {
@@ -48,15 +38,14 @@ export default function App() {
   }, [handleResize])
 
   const startResizing = useCallback(
-    (panel, event) => {
-      const startWidth = panel === 'left' ? sidebarWidth : rightPanelWidth
-      resizeStateRef.current = { panel, startX: event.clientX, startWidth }
+    (event) => {
+      resizeStateRef.current = { startX: event.clientX, startWidth: rightPanelWidth }
       document.body.style.cursor = 'col-resize'
       document.body.style.userSelect = 'none'
       window.addEventListener('mousemove', handleResize)
       window.addEventListener('mouseup', stopResizing)
     },
-    [handleResize, rightPanelWidth, sidebarWidth, stopResizing],
+    [handleResize, rightPanelWidth, stopResizing],
   )
 
   useEffect(() => {
@@ -93,8 +82,9 @@ export default function App() {
           selectedClient={selectedClient}
           onSelectClient={setSelectedClient}
           loading={clientsLoading}
-          width={sidebarWidth}
-          onResizeStart={(event) => startResizing('left', event)}
+          collapsed={sidebarCollapsed}
+          onExpand={() => setSidebarCollapsed(false)}
+          onCollapse={() => setSidebarCollapsed(true)}
         />
         <main className="flex-1 flex flex-col overflow-hidden bg-white border-x border-gray-200">
           {selectedClient ? (
@@ -112,7 +102,7 @@ export default function App() {
             isOpen={rightPanelOpen}
             onClose={() => setRightPanelOpen(false)}
             width={rightPanelWidth}
-            onResizeStart={(event) => startResizing('right', event)}
+            onResizeStart={startResizing}
           />
         )}
       </div>
