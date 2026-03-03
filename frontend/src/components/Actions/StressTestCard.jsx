@@ -40,7 +40,7 @@ function ImpactBar({ value }) {
 
   return (
     <div className="flex items-center gap-2">
-      <div className="flex-1 h-3.5 bg-gray-100 rounded-full relative overflow-hidden">
+      <div className="flex-1 h-3.5 bg-white/[0.05] rounded-full relative overflow-hidden">
         <div
           className={`absolute inset-y-0 left-0 rounded-full transition-all ${
             isNeg ? 'bg-red-400' : 'bg-green-400'
@@ -49,7 +49,7 @@ function ImpactBar({ value }) {
         />
       </div>
       <span className={`text-xs font-bold w-14 text-right ${
-        isNeg ? 'text-red-600' : 'text-green-600'
+        isNeg ? 'text-red-400' : 'text-green-400'
       }`}>
         {(value * 100).toFixed(1)}%
       </span>
@@ -59,15 +59,15 @@ function ImpactBar({ value }) {
 
 export default function StressTestCard({ allocation, totalValue, onClose, onAskAI }) {
   return (
-    <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg">
-      <div className="flex items-center justify-between border-b border-gray-200 bg-gray-50 px-4 py-3">
+    <div className="overflow-hidden rounded-xl border border-white/[0.08] bg-white/[0.05] shadow-glass backdrop-blur-md">
+      <div className="flex items-center justify-between border-b border-white/[0.08] bg-white/[0.03] px-4 py-3">
         <div className="flex items-center gap-2">
-          <BarChart3 size={15} className="text-navy" />
-          <h3 className="text-sm font-semibold text-navy">Stress Test Scenarios</h3>
+          <BarChart3 size={15} className="text-slate-200" />
+          <h3 className="text-sm font-semibold text-slate-200">Stress Test Scenarios</h3>
         </div>
         <button
           onClick={onClose}
-          className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-gray-200 hover:text-gray-600"
+          className="rounded-lg p-2 text-slate-500 transition-colors hover:bg-white/[0.08] hover:text-slate-300"
         >
           <X size={13} />
         </button>
@@ -79,14 +79,14 @@ export default function StressTestCard({ allocation, totalValue, onClose, onAskA
           const dollarImpact = (totalValue || 0) * impact
 
           return (
-            <div key={scenario.name} className="rounded-xl border border-gray-200 p-3 hover:border-gray-300 transition-colors">
+            <div key={scenario.name} className="rounded-xl border border-white/[0.08] p-3 hover:border-white/[0.12] transition-colors">
               <div className="mb-1.5 flex items-start justify-between">
                 <div>
-                  <p className="text-xs font-semibold text-gray-800">{scenario.name}</p>
-                  <p className="text-xs text-gray-400">{scenario.description}</p>
+                  <p className="text-xs font-semibold text-slate-200">{scenario.name}</p>
+                  <p className="text-xs text-slate-500">{scenario.description}</p>
                 </div>
                 <span className={`text-xs font-bold shrink-0 ml-2 ${
-                  dollarImpact < 0 ? 'text-red-600' : 'text-green-600'
+                  dollarImpact < 0 ? 'text-red-400' : 'text-green-400'
                 }`}>
                   {dollarImpact < 0 ? '-' : '+'}${Math.abs(dollarImpact).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                 </span>
@@ -98,13 +98,14 @@ export default function StressTestCard({ allocation, totalValue, onClose, onAskA
 
         <button
           onClick={() => onAskAI?.('Run a stress test analysis on this client\'s portfolio. Which scenarios pose the greatest risk? What hedging strategies or allocation changes would improve resilience?')}
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-navy py-2.5 text-xs font-semibold text-white transition-colors hover:bg-navy/90"
+          className="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-semibold text-white transition-colors"
+          style={{ backgroundColor: 'var(--persona-primary, #0D9488)' }}
         >
           <Sparkles size={13} />
           Get AI Risk Analysis
         </button>
 
-        <p className="text-xs text-gray-400 italic mt-2">
+        <p className="text-xs text-slate-600 italic mt-2">
           Scenarios use historical-based multipliers applied to current allocation. For illustration only.
         </p>
       </div>

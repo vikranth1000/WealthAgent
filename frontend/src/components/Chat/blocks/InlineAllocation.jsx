@@ -28,7 +28,7 @@ export default function InlineAllocation({ data }) {
   if (!chartData.length) return null
 
   return (
-    <div className="my-2 rounded-xl border border-gray-200 bg-white p-2">
+    <div className="my-2 rounded-xl border border-white/[0.08] bg-white/[0.04] p-2">
       <ResponsiveContainer width="100%" height={160}>
         <PieChart>
           <Pie
@@ -41,7 +41,7 @@ export default function InlineAllocation({ data }) {
             labelLine={false}
             label={PctLabel}
             strokeWidth={2}
-            stroke="#fff"
+            stroke="rgba(255,255,255,0.1)"
             isAnimationActive={false}
           >
             {chartData.map((_, i) => (
@@ -50,7 +50,7 @@ export default function InlineAllocation({ data }) {
           </Pie>
           <Tooltip
             formatter={(v) => `${v.toFixed(1)}%`}
-            contentStyle={{ padding: '4px 8px', borderRadius: '8px', border: '1px solid #E5E7EB', fontSize: '11px' }}
+            contentStyle={{ padding: '4px 8px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', backgroundColor: 'rgba(15,23,42,0.9)', color: '#e2e8f0', fontSize: '11px' }}
           />
         </PieChart>
       </ResponsiveContainer>
@@ -58,7 +58,7 @@ export default function InlineAllocation({ data }) {
         {chartData.map((entry, i) => (
           <div key={entry.name} className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
-            <span className="text-[10px] text-gray-600">{entry.name}</span>
+            <span className="text-[10px] text-slate-400">{entry.name}</span>
           </div>
         ))}
       </div>
