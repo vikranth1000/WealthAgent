@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { MessageSquare, Trash2, Undo2, Zap, ArrowRightLeft, Scissors, BarChart3, FileText, X } from 'lucide-react'
+import { MessageSquare, Trash2, Zap, ArrowRightLeft, Scissors, BarChart3, FileText, X } from 'lucide-react'
+import { AnimatePresence } from 'framer-motion'
+import { toast } from 'sonner'
 import { useWebSocket } from '../../hooks/useWebSocket'
 import MessageBubble from './MessageBubble'
 import AgentIndicator from './AgentIndicator'
@@ -20,8 +22,6 @@ export default function ChatWindow({ client, portfolioData, onGeneratingChange }
   const [input, setInput] = useState('')
   const [activeAction, setActiveAction] = useState(null)
   const [actionsOpen, setActionsOpen] = useState(false)
-  const [undoRestore, setUndoRestore] = useState(null)
-  const undoTimerRef = useRef(null)
   const actionsRef = useRef(null)
   const bottomRef = useRef(null)
 
@@ -34,8 +34,6 @@ export default function ChatWindow({ client, portfolioData, onGeneratingChange }
     setInput('')
     setActiveAction(null)
     setActionsOpen(false)
-    setUndoRestore(null)
-    clearTimeout(undoTimerRef.current)
   }, [client?.id])
 
   // Close actions menu on outside click
@@ -53,16 +51,10 @@ export default function ChatWindow({ client, portfolioData, onGeneratingChange }
   const handleClearChat = useCallback(async () => {
     const restoreFn = await clearChat()
     if (!restoreFn) return
-    setUndoRestore(() => restoreFn)
-    clearTimeout(undoTimerRef.current)
-    undoTimerRef.current = setTimeout(() => setUndoRestore(null), 5000)
+    toast('Chat cleared', {
+      action: { label: 'Undo', onClick: restoreFn },
+    })
   }, [clearChat])
-
-  const handleUndo = useCallback(() => {
-    undoRestore?.()
-    setUndoRestore(null)
-    clearTimeout(undoTimerRef.current)
-  }, [undoRestore])
 
   function handleSend(text) {
     const msg = (text ?? input).trim()
@@ -107,19 +99,6 @@ export default function ChatWindow({ client, portfolioData, onGeneratingChange }
         )}
       </div>
 
-      {undoRestore && (
-        <div className="flex items-center justify-between px-5 py-2 bg-white/[0.06] border-y border-white/[0.08] text-xs shrink-0 animate-slide-up">
-          <span className="text-slate-400 font-sans">Chat cleared</span>
-          <button
-            onClick={handleUndo}
-            className="flex items-center gap-1 rounded-md px-2 py-1 bg-white/[0.10] hover:bg-white/[0.15] text-slate-300 transition-colors font-sans"
-          >
-            <Undo2 size={11} />
-            Undo
-          </button>
-        </div>
-      )}
-
       {messages.length === 0 && !activeAction ? (
         <div className="flex-1 flex flex-col items-center justify-center px-8 text-center overflow-y-auto">
           <div
@@ -142,15 +121,17 @@ export default function ChatWindow({ client, portfolioData, onGeneratingChange }
         <div className="flex-1 relative min-h-0">
           <div className="h-full overflow-y-auto">
             <div className="px-5 py-4">
-              {messages.map((msg, i) => (
-                <MessageBubble
-                  key={i}
-                  role={msg.role}
-                  content={msg.content}
-                  streaming={msg.streaming}
-                  error={msg.error}
-                />
-              ))}
+              <AnimatePresence initial={false}>
+                {messages.map((msg, i) => (
+                  <MessageBubble
+                    key={i}
+                    role={msg.role}
+                    content={msg.content}
+                    streaming={msg.streaming}
+                    error={msg.error}
+                  />
+                ))}
+              </AnimatePresence>
               {activeAgent && (
                 <div className="mb-3 flex justify-start">
                   <AgentIndicator agent={activeAgent} />
