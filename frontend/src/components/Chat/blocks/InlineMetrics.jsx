@@ -1,31 +1,31 @@
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react'
 
 const COLOR_MAP = {
-  green: { text: 'text-green-600', bg: 'bg-green-50', border: 'border-green-100', icon: TrendingUp },
-  red: { text: 'text-red-500', bg: 'bg-red-50', border: 'border-red-100', icon: TrendingDown },
-  neutral: { text: 'text-navy', bg: 'bg-gray-50', border: 'border-gray-200', icon: Minus },
+  green: { text: 'text-emerald-400', icon: TrendingUp },
+  red: { text: 'text-rose-400', icon: TrendingDown },
+  neutral: { text: 'text-slate-500', icon: Minus },
 }
 
 export default function InlineMetrics({ data }) {
   if (!data?.items?.length) return null
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 my-2">
+    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 my-3">
       {data.items.map((item, i) => {
         const scheme = COLOR_MAP[item.color] || COLOR_MAP.neutral
         const Icon = scheme.icon
         return (
           <div
             key={i}
-            className={`rounded-xl border px-3 py-2 ${scheme.bg} ${scheme.border}`}
+            className="rounded-xl bg-black/20 border border-white/[0.08] px-3 py-2.5"
           >
             <div className="flex items-center gap-1.5">
-              <Icon size={11} className={scheme.text} />
-              <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wide">
+              <Icon size={12} className={scheme.text} />
+              <p className="text-[10px] uppercase tracking-wider text-slate-600 font-sans mb-1">
                 {item.label}
               </p>
             </div>
-            <p className={`text-sm font-bold mt-0.5 tabular-nums ${scheme.text}`}>
+            <p className="font-mono text-sm font-semibold text-slate-200">
               {item.value}
             </p>
           </div>

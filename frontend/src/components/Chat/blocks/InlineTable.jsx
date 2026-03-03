@@ -33,22 +33,23 @@ export default function InlineTable({ data }) {
     : rows
 
   return (
-    <div className="my-2 overflow-x-auto rounded-xl border border-gray-200">
+    <div className="my-3 overflow-x-auto rounded-xl border border-white/[0.08]">
       <table className="w-full text-xs">
-        <thead className="bg-gradient-to-r from-gray-50 to-gray-100/50 border-b border-gray-200">
+        <thead>
           <tr>
             {columns.map((col, idx) => (
               <th
                 key={idx}
-                className="px-2.5 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-gray-400 cursor-pointer select-none hover:bg-gray-100 transition-colors"
+                className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider font-sans bg-white/[0.04] border-b border-white/[0.08] cursor-pointer select-none hover:bg-white/[0.06] transition-colors"
+                style={sortIdx === idx ? { color: 'var(--persona-primary)' } : undefined}
                 onClick={() => handleSort(idx)}
               >
-                <span className="flex items-center gap-1">
+                <span className={`flex items-center gap-1 ${sortIdx !== idx ? 'text-slate-600' : ''}`}>
                   {col}
                   {sortIdx === idx ? (
-                    sortDir === 'asc' ? <ChevronDown size={10} className="text-teal" /> : <ChevronUp size={10} className="text-teal" />
+                    sortDir === 'asc' ? <ChevronDown size={10} /> : <ChevronUp size={10} />
                   ) : (
-                    <ChevronUp size={10} className="text-gray-300" />
+                    <ChevronUp size={10} className="text-slate-700" />
                   )}
                 </span>
               </th>
@@ -57,18 +58,17 @@ export default function InlineTable({ data }) {
         </thead>
         <tbody>
           {sorted.map((row, ri) => (
-            <tr key={ri} className={ri % 2 === 0 ? 'bg-white' : 'bg-gray-50/70'}>
+            <tr key={ri} className="border-b border-white/[0.04] hover:bg-white/[0.03] transition-colors">
               {row.map((cell, ci) => {
-                const isFirst = ci === 0
                 const str = String(cell ?? '')
                 const isNeg = str.startsWith('-')
                 const isPos = str.startsWith('+')
                 return (
                   <td
                     key={ci}
-                    className={`px-2.5 py-1.5 ${
-                      isFirst ? 'font-semibold text-navy' : 'text-gray-600'
-                    } ${isNeg ? 'text-red-500 font-medium' : ''} ${isPos ? 'text-green-600 font-medium' : ''}`}
+                    className={`px-3 py-2 text-xs font-mono ${
+                      isNeg ? 'text-rose-400' : isPos ? 'text-emerald-400' : 'text-slate-400'
+                    }`}
                   >
                     {cell}
                   </td>
