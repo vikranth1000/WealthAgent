@@ -1,4 +1,4 @@
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart, ReferenceDot } from 'recharts'
 
 function formatYTick(value) {
   if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`
@@ -16,43 +16,69 @@ function formatTooltipValue(value) {
 export default function PerformanceChart({ data = [] }) {
   if (!data || data.length === 0) {
     return (
-      <div className="h-40 flex items-center justify-center rounded-xl bg-gray-50 border border-gray-200 text-gray-400 text-sm">
+      <div className="h-40 flex items-center justify-center rounded-xl text-slate-500 text-sm">
         No historical data available
       </div>
     )
   }
 
+  const lastPoint = data[data.length - 1]
+
   return (
     <ResponsiveContainer width="100%" height={160}>
-      <LineChart data={data} margin={{ top: 4, right: 8, left: 4, bottom: 0 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-        <XAxis dataKey="date" tick={{ fontSize: 9 }} tickLine={false} />
+      <AreaChart data={data} margin={{ top: 4, right: 8, left: 4, bottom: 0 }}>
+        <defs>
+          <linearGradient id="perfGradient" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="5%" stopColor="var(--persona-primary)" stopOpacity={0.20} />
+            <stop offset="95%" stopColor="var(--persona-primary)" stopOpacity={0} />
+          </linearGradient>
+        </defs>
+        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+        <XAxis
+          dataKey="date"
+          tick={{ fill: '#475569', fontSize: 11, fontFamily: '"Geist Mono"' }}
+          tickLine={false}
+          axisLine={false}
+        />
         <YAxis
-          tick={{ fontSize: 9 }}
+          tick={{ fill: '#475569', fontSize: 11, fontFamily: '"Geist Mono"' }}
           tickLine={false}
           tickFormatter={formatYTick}
           width={48}
+          axisLine={false}
         />
         <Tooltip
           formatter={(v) => [formatTooltipValue(v), 'Value']}
           contentStyle={{
-            padding: '4px 6px',
-            borderRadius: '6px',
-            border: '1px solid #E5E7EB',
-            fontSize: '10px',
-            lineHeight: 1.2,
+            background: 'rgba(8,13,26,0.95)',
+            border: '1px solid rgba(255,255,255,0.10)',
+            borderRadius: '12px',
+            color: '#CBD5E1',
+            fontSize: '12px',
+            fontFamily: '"Geist Mono", monospace',
           }}
-          labelStyle={{ marginBottom: 2, fontSize: '10px' }}
-          itemStyle={{ margin: 0, padding: 0, fontSize: '10px' }}
+          labelStyle={{ marginBottom: 2, fontSize: '10px', color: '#475569' }}
+          itemStyle={{ margin: 0, padding: 0, fontSize: '11px', color: 'var(--persona-primary)' }}
         />
-        <Line
+        <Area
           type="monotone"
           dataKey="value"
-          stroke="#0D9488"
+          stroke="var(--persona-primary)"
           strokeWidth={2}
+          fill="url(#perfGradient)"
           dot={false}
         />
-      </LineChart>
+        {lastPoint && (
+          <ReferenceDot
+            x={lastPoint.date}
+            y={lastPoint.value}
+            r={4}
+            fill="var(--persona-primary)"
+            stroke="var(--persona-primary)"
+            strokeWidth={2}
+          />
+        )}
+      </AreaChart>
     </ResponsiveContainer>
   )
 }

@@ -18,19 +18,24 @@ function formatValue(key, value) {
   }
 }
 
-function valueColor(key, value) {
-  if (key === 'ytdReturn') return value >= 0 ? 'text-green-600' : 'text-red-500'
-  if (key === 'maxDrawdown') return 'text-red-500'
-  return 'text-navy'
+function valueStyle(key, value) {
+  if (key === 'totalValue') return { color: 'var(--persona-primary)' }
+  if (key === 'ytdReturn') return { color: value >= 0 ? '#34D399' : '#F87171' }
+  if (key === 'sharpe') return { color: '#94A3B8' }
+  if (key === 'maxDrawdown') return { color: '#F87171' }
+  return {}
 }
 
 function AnimatedCard({ label, rawValue, formatKey }) {
   const animated = useAnimatedValue(rawValue)
 
   return (
-    <div className="bg-gradient-to-br from-white to-gray-50/50 rounded-xl border border-gray-200 px-3 py-2.5 shadow-sm">
-      <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wide">{label}</p>
-      <p className={`text-[15px] font-bold mt-0.5 tabular-nums ${valueColor(formatKey, rawValue)}`}>
+    <div className="rounded-xl bg-white/[0.05] border border-white/[0.08] px-3 py-2.5">
+      <p className="text-[10px] font-bold uppercase tracking-widest text-slate-700 font-sans mb-1.5">{label}</p>
+      <p
+        className="font-mono text-base font-semibold transition-all duration-700"
+        style={valueStyle(formatKey, rawValue)}
+      >
         {formatValue(formatKey, rawValue != null ? animated : null)}
       </p>
     </div>

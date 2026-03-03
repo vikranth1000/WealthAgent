@@ -15,7 +15,7 @@ function PctLabel({ cx, cy, midAngle, innerRadius, outerRadius, percent }) {
     <text
       x={x}
       y={y}
-      fill="white"
+      fill="#94A3B8"
       textAnchor="middle"
       dominantBaseline="central"
       fontSize={11}
@@ -51,54 +51,61 @@ export default function AllocationChart({ data }) {
 
   if (!data || Object.keys(data).length === 0) {
     return (
-      <div className="h-40 flex items-center justify-center rounded-xl bg-gray-50 border border-gray-200 text-gray-400 text-sm">
+      <div className="h-40 flex items-center justify-center rounded-xl text-slate-500 text-sm">
         No allocation data
       </div>
     )
   }
 
   return (
-    <div>
-      <ResponsiveContainer width="100%" height={180}>
-        <PieChart>
-          <Pie
-            data={chartData}
-            cx="50%"
-            cy="50%"
-            innerRadius="42%"
-            outerRadius="78%"
-            dataKey="value"
-            labelLine={false}
-            label={PctLabel}
-            strokeWidth={2}
-            stroke="#fff"
-            isAnimationActive={false}
-          >
-            {chartData.map((_, i) => (
-              <Cell key={i} fill={COLORS[i % COLORS.length]} />
-            ))}
-          </Pie>
-          <Tooltip
-            formatter={(v) => `${v.toFixed(1)}%`}
-            contentStyle={{
-              padding: '4px 8px',
-              borderRadius: '8px',
-              border: '1px solid #E5E7EB',
-              fontSize: '11px',
-            }}
-          />
-        </PieChart>
-      </ResponsiveContainer>
+    <div className="flex items-center gap-3">
+      <div className="flex-1">
+        <ResponsiveContainer width="100%" height={180}>
+          <PieChart>
+            <Pie
+              data={chartData}
+              cx="50%"
+              cy="50%"
+              innerRadius="42%"
+              outerRadius="78%"
+              dataKey="value"
+              labelLine={false}
+              label={PctLabel}
+              strokeWidth={2}
+              stroke="rgba(255,255,255,0.08)"
+              isAnimationActive={false}
+            >
+              {chartData.map((_, i) => (
+                <Cell key={i} fill={COLORS[i % COLORS.length]} />
+              ))}
+            </Pie>
+            <Tooltip
+              formatter={(v) => `${v.toFixed(1)}%`}
+              contentStyle={{
+                background: 'rgba(8,13,26,0.95)',
+                border: '1px solid rgba(255,255,255,0.10)',
+                borderRadius: '12px',
+                color: '#CBD5E1',
+                fontSize: '12px',
+                fontFamily: '"Geist Mono", monospace',
+              }}
+            />
+          </PieChart>
+        </ResponsiveContainer>
+      </div>
 
-      {/* Legend driven by target data — no ghost labels during morph */}
-      <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 mt-1 px-2">
+      {/* Vertical legend with percentages */}
+      <div className="flex flex-col gap-1.5 shrink-0 pr-1">
         {legendData.map((entry, i) => (
-          <div key={entry.name} className="flex items-center gap-1.5">
+          <div key={entry.name} className="flex items-center gap-2">
             <span
               className="w-2.5 h-2.5 rounded-full shrink-0"
               style={{ backgroundColor: COLORS[i % COLORS.length] }}
             />
-            <span className="text-[11px] text-gray-600">{entry.name}</span>
+            <span className="text-[11px] text-slate-400 whitespace-nowrap">{entry.name}</span>
+            <span className="text-[11px] font-medium text-slate-500 tabular-nums ml-auto">
+              {(entry.value * 100).toFixed(0)}%
+            </span>
           </div>
         ))}
       </div>

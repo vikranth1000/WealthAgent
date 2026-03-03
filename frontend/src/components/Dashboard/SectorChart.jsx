@@ -20,7 +20,7 @@ export default function SectorChart({ data }) {
 
   if (!data || Object.keys(data).length === 0) {
     return (
-      <div className="h-40 flex items-center justify-center text-gray-400 text-sm">
+      <div className="h-40 flex items-center justify-center text-slate-500 text-sm">
         No sector data
       </div>
     )
@@ -36,15 +36,31 @@ export default function SectorChart({ data }) {
         layout="vertical"
         margin={{ top: 0, right: 44, left: 0, bottom: 0 }}
       >
+        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" horizontal={false} />
         <XAxis type="number" hide />
-        <YAxis type="category" dataKey="name" width={96} tick={{ fontSize: 11 }} />
-        <Tooltip formatter={(v) => `${v.toFixed(1)}%`} />
-        <Bar dataKey="value" fill="#0D9488" radius={[0, 3, 3, 0]} isAnimationActive={false}>
+        <YAxis
+          type="category"
+          dataKey="name"
+          width={96}
+          tick={{ fill: '#475569', fontSize: 11, fontFamily: '"Geist Mono"' }}
+        />
+        <Tooltip
+          formatter={(v) => `${v.toFixed(1)}%`}
+          contentStyle={{
+            background: 'rgba(8,13,26,0.95)',
+            border: '1px solid rgba(255,255,255,0.10)',
+            borderRadius: '12px',
+            color: '#CBD5E1',
+            fontSize: '12px',
+            fontFamily: '"Geist Mono", monospace',
+          }}
+        />
+        <Bar dataKey="value" fill="var(--persona-primary)" radius={[0, 4, 4, 0]} isAnimationActive={false}>
           <LabelList
             dataKey="value"
             position="right"
             formatter={(v) => `${v.toFixed(1)}%`}
-            style={{ fontSize: 11, fill: '#6B7280' }}
+            style={{ fontSize: 11, fill: '#94A3B8', fontWeight: 500 }}
           />
         </Bar>
       </BarChart>
