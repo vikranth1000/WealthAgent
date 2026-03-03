@@ -14,7 +14,7 @@ const ACTIONS = [
   { id: 'report', label: 'Full Report', desc: 'Comprehensive portfolio review', icon: FileText },
 ]
 
-export default function ChatWindow({ client, portfolioData }) {
+export default function ChatWindow({ client, portfolioData, onGeneratingChange }) {
   const { send, stop, messages, activeAgent, isConnected, suggestions, clearChat } = useWebSocket(client?.id)
   const { analysis } = portfolioData
   const [input, setInput] = useState('')
@@ -78,52 +78,60 @@ export default function ChatWindow({ client, portfolioData }) {
 
   const isGenerating = !!activeAgent
 
+  useEffect(() => {
+    onGeneratingChange?.(isGenerating)
+  }, [isGenerating, onGeneratingChange])
+
   return (
     <div className="flex flex-col h-full">
-      {/* Connection status + clear chat */}
-      <div className="flex items-center justify-between px-4 py-2 border-b border-gray-100 bg-gray-50/70 shrink-0">
+      {/* Slim status + clear row */}
+      <div className="flex items-center justify-between px-5 py-2 shrink-0">
         <div className="flex items-center gap-2">
           <span
-            className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-emerald-500' : 'bg-rose-400'}`}
+            className={`h-1.5 w-1.5 rounded-full transition-colors ${
+              isConnected ? 'bg-emerald-500' : 'bg-rose-400 animate-pulse'
+            }`}
           />
-          <span className="text-xs font-medium text-gray-500">
-            {isConnected ? 'Connected' : 'Reconnecting\u2026'}
-          </span>
+          {!isConnected && (
+            <span className="text-[11px] text-slate-600 font-sans">Reconnecting…</span>
+          )}
         </div>
         {messages.length > 0 && !isGenerating && (
           <button
             onClick={handleClearChat}
-            className="flex items-center gap-1 rounded-md px-2 py-1 text-[11px] text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
-            title="Clear chat history"
+            className="flex items-center gap-1 rounded-md px-2 py-1 text-[11px] text-slate-600 hover:text-rose-400 transition-colors font-sans"
           >
-            <Trash2 size={12} />
+            <Trash2 size={11} />
             Clear
           </button>
         )}
       </div>
 
-      {/* Undo toast */}
       {undoRestore && (
-        <div className="flex items-center justify-between px-4 py-2 bg-navy text-white text-xs shrink-0">
-          <span>Chat cleared</span>
+        <div className="flex items-center justify-between px-5 py-2 bg-white/[0.06] border-y border-white/[0.08] text-xs shrink-0 animate-slide-up">
+          <span className="text-slate-400 font-sans">Chat cleared</span>
           <button
             onClick={handleUndo}
-            className="flex items-center gap-1 rounded-md px-2 py-1 bg-white/20 hover:bg-white/30 transition-colors"
+            className="flex items-center gap-1 rounded-md px-2 py-1 bg-white/[0.10] hover:bg-white/[0.15] text-slate-300 transition-colors font-sans"
           >
-            <Undo2 size={12} />
+            <Undo2 size={11} />
             Undo
           </button>
         </div>
       )}
 
       {messages.length === 0 && !activeAction ? (
-        /* Empty state */
         <div className="flex-1 flex flex-col items-center justify-center px-8 text-center overflow-y-auto">
-          <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-teal/15 to-teal/5 shadow-sm">
-            <MessageSquare size={24} className="text-teal" />
+          <div
+            className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-white/[0.06] border border-white/[0.08]"
+            style={{ boxShadow: '0 0 20px color-mix(in srgb, var(--persona-primary) 12%, transparent)' }}
+          >
+            <MessageSquare size={22} style={{ color: 'var(--persona-primary)', opacity: 0.7 }} />
           </div>
-          <h3 className="mb-1.5 text-lg font-semibold text-navy">Chat with WealthAgent</h3>
-          <p className="mb-6 max-w-sm text-sm leading-relaxed text-gray-400">
+          <h3 className="mb-1.5 font-display text-lg font-semibold text-slate-300">
+            Chat with WealthAgent
+          </h3>
+          <p className="mb-6 max-w-sm text-sm leading-relaxed text-slate-600 font-sans">
             Ask anything about {client?.name ?? 'your client'}&apos;s portfolio, performance, or
             market conditions.
           </p>
@@ -133,7 +141,7 @@ export default function ChatWindow({ client, portfolioData }) {
         /* Chat area */
         <div className="flex-1 relative min-h-0">
           <div className="h-full overflow-y-auto">
-            <div className="px-4 py-3">
+            <div className="px-5 py-4">
               {messages.map((msg, i) => (
                 <MessageBubble
                   key={i}
@@ -164,7 +172,7 @@ export default function ChatWindow({ client, portfolioData }) {
       )}
 
       {/* Input area */}
-      <div className="border-t border-gray-200 bg-white shrink-0">
+      <div className="shrink-0 border-t border-white/[0.06] bg-[#080D1A]/60">
         {messages.length > 0 && !isGenerating && (
           <SuggestedPrompts
             persona={client?.persona}
@@ -180,11 +188,11 @@ export default function ChatWindow({ client, portfolioData }) {
               <button
                 onClick={() => setActionsOpen((o) => !o)}
                 disabled={isGenerating}
-                className={`flex h-10 items-center gap-1.5 rounded-xl border px-3 text-xs font-semibold transition-all ${
+                className={`flex h-10 items-center gap-1.5 rounded-xl border px-3 text-xs font-semibold transition-all font-sans ${
                   actionsOpen
-                    ? 'border-teal/40 bg-teal/10 text-teal'
-                    : 'border-gray-200 bg-gray-50 text-gray-500 hover:border-gray-300 hover:bg-gray-100 hover:text-gray-700'
-                } ${isGenerating ? 'cursor-not-allowed opacity-40' : ''}`}
+                    ? 'border-white/20 bg-white/[0.08] text-slate-200'
+                    : 'border-white/[0.10] bg-white/[0.04] text-slate-500 hover:border-white/[0.18] hover:text-slate-300'
+                } ${isGenerating ? 'cursor-not-allowed opacity-30' : ''}`}
                 title="AI Actions"
               >
                 <Zap size={14} />
@@ -193,26 +201,27 @@ export default function ChatWindow({ client, portfolioData }) {
 
               {/* Popover menu */}
               {actionsOpen && (
-                <div className="absolute bottom-full left-0 mb-2 w-64 rounded-xl border border-gray-200 bg-white shadow-2xl overflow-hidden z-50 ring-1 ring-black/5">
-                  <div className="flex items-center justify-between px-3 py-2.5 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">AI Actions</span>
-                    <button onClick={() => setActionsOpen(false)} className="text-gray-400 hover:text-gray-600">
+                <div className="absolute bottom-full left-0 mb-2 w-64 rounded-2xl border border-white/[0.10] bg-[#0F1929] shadow-2xl overflow-hidden z-50 animate-slide-up">
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06]">
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-600 font-sans">AI Actions</span>
+                    <button onClick={() => setActionsOpen(false)} className="text-slate-600 hover:text-slate-400 transition-colors">
                       <X size={12} />
                     </button>
                   </div>
-                  <div className="py-1">
+                  <div className="py-1.5">
                     {ACTIONS.map(({ id, label, desc, icon: Icon }) => (
                       <button
                         key={id}
                         onClick={() => handleAction(id)}
-                        className="flex items-center gap-3 w-full px-3 py-2.5 text-left hover:bg-gray-50 transition-colors group"
+                        className="flex items-center gap-3 w-full px-4 py-2.5 text-left hover:bg-white/[0.04] transition-colors group"
                       >
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-teal/8 text-teal group-hover:bg-teal/15 transition-colors">
-                          <Icon size={15} />
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/[0.06] group-hover:bg-white/[0.10] transition-colors"
+                          style={{ color: 'var(--persona-primary)' }}>
+                          <Icon size={14} />
                         </div>
                         <div className="min-w-0">
-                          <p className="text-sm font-medium text-gray-800">{label}</p>
-                          <p className="text-[11px] text-gray-400 leading-tight">{desc}</p>
+                          <p className="text-sm font-medium text-slate-300 font-sans">{label}</p>
+                          <p className="text-[11px] text-slate-600 leading-tight font-sans">{desc}</p>
                         </div>
                       </button>
                     ))}
