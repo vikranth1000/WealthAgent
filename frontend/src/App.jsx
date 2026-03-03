@@ -1,65 +1,29 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
-import Sidebar from './components/Layout/Sidebar.jsx'
-import Header from './components/Layout/Header.jsx'
+import { useState, useEffect, useCallback } from 'react'
 import RightPanel from './components/Layout/RightPanel.jsx'
 import ChatWindow from './components/Chat/ChatWindow.jsx'
+import PersonaPills from './components/Chat/PersonaPills.jsx'
 import { useClients } from './hooks/useClients.js'
 import { usePortfolio } from './hooks/usePortfolio.js'
 
-const MIN_RIGHT_PANEL_WIDTH = 260
-const MAX_RIGHT_PANEL_WIDTH = 540
-
-function clamp(value, min, max) {
-  return Math.min(Math.max(value, min), max)
+const PERSONA_COLORS = {
+  conservative_retiree: '#3B82F6',
+  aggressive_growth: '#F59E0B',
+  young_professional: '#8B5CF6',
+  institutional: '#2DD4BF',
 }
 
 export default function App() {
   const { clients, loading: clientsLoading } = useClients()
   const [selectedClient, setSelectedClient] = useState(null)
   const portfolioData = usePortfolio(selectedClient?.id)
-  const [rightPanelOpen, setRightPanelOpen] = useState(true)
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(true)
-  const [rightPanelWidth, setRightPanelWidth] = useState(320)
-  const resizeStateRef = useRef(null)
+  const [isGenerating, setIsGenerating] = useState(false)
 
-  const handleResize = useCallback((event) => {
-    if (!resizeStateRef.current) return
-    const { startX, startWidth } = resizeStateRef.current
-    const delta = event.clientX - startX
-    setRightPanelWidth(clamp(startWidth - delta, MIN_RIGHT_PANEL_WIDTH, MAX_RIGHT_PANEL_WIDTH))
-  }, [])
-
-  const stopResizing = useCallback(() => {
-    resizeStateRef.current = null
-    document.body.style.cursor = ''
-    document.body.style.userSelect = ''
-    window.removeEventListener('mousemove', handleResize)
-    window.removeEventListener('mouseup', stopResizing)
-  }, [handleResize])
-
-  const startResizing = useCallback(
-    (event) => {
-      resizeStateRef.current = { startX: event.clientX, startWidth: rightPanelWidth }
-      document.body.style.cursor = 'col-resize'
-      document.body.style.userSelect = 'none'
-      window.addEventListener('mousemove', handleResize)
-      window.addEventListener('mouseup', stopResizing)
-    },
-    [handleResize, rightPanelWidth, stopResizing],
-  )
-
-  useEffect(() => {
-    return () => stopResizing()
-  }, [stopResizing])
-
-  // Select first client once loaded
   useEffect(() => {
     if (clients.length > 0 && !selectedClient) {
       setSelectedClient(clients[0])
     }
   }, [clients, selectedClient])
 
-  // Update selectedClient when clients refresh (e.g. totalValue changes)
   useEffect(() => {
     if (selectedClient && clients.length > 0) {
       const updated = clients.find((c) => c.id === selectedClient.id)
@@ -69,42 +33,62 @@ export default function App() {
     }
   }, [clients, selectedClient])
 
+  useEffect(() => {
+    const color = PERSONA_COLORS[selectedClient?.persona] ?? '#3B82F6'
+    document.documentElement.style.setProperty('--persona-primary', color)
+  }, [selectedClient?.persona])
+
   return (
-    <div className="flex flex-col h-screen bg-light-gray font-sans overflow-hidden">
-      <Header
-        client={selectedClient}
-        rightPanelOpen={rightPanelOpen}
-        onTogglePanel={() => setRightPanelOpen((o) => !o)}
-      />
-      <div className="flex flex-1 overflow-hidden">
-        <Sidebar
+    <div className="flex h-screen w-screen overflow-hidden bg-[#0F172A] font-sans">
+      {/* Background gradient mesh */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+        <div
+          className="absolute -top-48 -left-48 h-[500px] w-[500px] rounded-full blur-3xl opacity-[0.04] transition-all duration-[2000ms] ease-in-out"
+          style={{ background: 'var(--persona-primary)' }}
+        />
+        <div
+          className="absolute top-1/2 left-1/3 -translate-y-1/2 h-80 w-80 rounded-full blur-3xl opacity-[0.03] transition-all duration-[2000ms] ease-in-out delay-300"
+          style={{ background: 'var(--persona-primary)' }}
+        />
+        <div
+          className="absolute -bottom-40 right-16 h-72 w-72 rounded-full blur-3xl opacity-[0.04] transition-all duration-[2000ms] ease-in-out delay-700"
+          style={{ background: 'var(--persona-primary)' }}
+        />
+      </div>
+
+      {/* Left panel — Chat */}
+      <div className="relative z-10 flex w-[55%] flex-col h-full animate-panel-left bg-[#080D1A]/80">
+        <PersonaPills
           clients={clients}
           selectedClient={selectedClient}
           onSelectClient={setSelectedClient}
           loading={clientsLoading}
-          collapsed={sidebarCollapsed}
-          onExpand={() => setSidebarCollapsed(false)}
-          onCollapse={() => setSidebarCollapsed(true)}
         />
-        <main className="flex-1 flex flex-col overflow-hidden bg-white border-x border-gray-200">
+        <div className="flex-1 min-h-0">
           {selectedClient ? (
-            <ChatWindow client={selectedClient} portfolioData={portfolioData} />
+            <ChatWindow
+              client={selectedClient}
+              portfolioData={portfolioData}
+              onGeneratingChange={setIsGenerating}
+            />
           ) : (
-            <div className="flex-1 flex items-center justify-center text-gray-400 text-sm">
-              {clientsLoading ? 'Loading clients...' : 'Select a client to begin'}
+            <div className="flex h-full items-center justify-center text-slate-600 text-sm">
+              {clientsLoading ? 'Loading clients…' : 'Select a client to begin'}
             </div>
           )}
-        </main>
-        {selectedClient && (
-          <RightPanel
-            client={selectedClient}
-            portfolioData={portfolioData}
-            isOpen={rightPanelOpen}
-            onClose={() => setRightPanelOpen(false)}
-            width={rightPanelWidth}
-            onResizeStart={startResizing}
-          />
-        )}
+        </div>
+      </div>
+
+      {/* Glowing divider */}
+      <div className="relative z-10 w-px shrink-0 animate-divider-draw">
+        <div
+          className={`absolute inset-0 persona-divider transition-all duration-[1200ms] ${isGenerating ? 'animate-breathe' : ''}`}
+        />
+      </div>
+
+      {/* Right panel — Portfolio */}
+      <div className="relative z-10 flex w-[45%] flex-col h-full animate-panel-right">
+        <RightPanel client={selectedClient} portfolioData={portfolioData} />
       </div>
     </div>
   )
