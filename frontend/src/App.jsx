@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react'
+import { motion } from 'framer-motion'
+import { Toaster } from 'sonner'
 import RightPanel from './components/Layout/RightPanel.jsx'
 import ChatWindow from './components/Chat/ChatWindow.jsx'
 import PersonaPills from './components/Chat/PersonaPills.jsx'
@@ -8,9 +10,11 @@ import { usePortfolio } from './hooks/usePortfolio.js'
 const PERSONA_COLORS = {
   conservative_retiree: '#3B82F6',
   aggressive_growth: '#F59E0B',
-  young_professional: '#8B5CF6',
+  young_professional: '#A855F7',
   institutional: '#2DD4BF',
 }
+
+const spring = { type: 'spring', stiffness: 260, damping: 28 }
 
 export default function App() {
   const { clients, loading: clientsLoading } = useClients()
@@ -38,26 +42,36 @@ export default function App() {
     document.documentElement.style.setProperty('--persona-primary', color)
   }, [selectedClient?.persona])
 
+  const accentColor = PERSONA_COLORS[selectedClient?.persona] ?? '#3B82F6'
+
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-[#0F172A] font-sans">
-      {/* Background gradient mesh */}
+    <div className="flex h-screen w-screen overflow-hidden bg-[#05080F] font-sans">
+      {/* Animated background orbs */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
-        <div
-          className="absolute -top-48 -left-48 h-[500px] w-[500px] rounded-full blur-3xl opacity-[0.04] transition-all duration-[2000ms] ease-in-out"
-          style={{ background: 'var(--persona-primary)' }}
+        <motion.div
+          className="absolute -top-48 -left-48 h-[500px] w-[500px] rounded-full blur-3xl"
+          animate={{ backgroundColor: accentColor, opacity: 0.04 }}
+          transition={{ duration: 1.2, ease: 'easeInOut' }}
         />
-        <div
-          className="absolute top-1/2 left-1/3 -translate-y-1/2 h-80 w-80 rounded-full blur-3xl opacity-[0.03] transition-all duration-[2000ms] ease-in-out delay-300"
-          style={{ background: 'var(--persona-primary)' }}
+        <motion.div
+          className="absolute top-1/2 left-1/3 -translate-y-1/2 h-80 w-80 rounded-full blur-3xl"
+          animate={{ backgroundColor: accentColor, opacity: 0.03 }}
+          transition={{ duration: 1.2, ease: 'easeInOut', delay: 0.15 }}
         />
-        <div
-          className="absolute -bottom-40 right-16 h-72 w-72 rounded-full blur-3xl opacity-[0.04] transition-all duration-[2000ms] ease-in-out delay-700"
-          style={{ background: 'var(--persona-primary)' }}
+        <motion.div
+          className="absolute -bottom-40 right-16 h-72 w-72 rounded-full blur-3xl"
+          animate={{ backgroundColor: accentColor, opacity: 0.04 }}
+          transition={{ duration: 1.2, ease: 'easeInOut', delay: 0.3 }}
         />
       </div>
 
       {/* Left panel — Chat */}
-      <div className="relative z-10 flex w-[55%] flex-col h-full animate-panel-left bg-[#080D1A]/80">
+      <motion.div
+        className="relative z-10 flex w-[55%] flex-col h-full bg-[#05080F]/90"
+        initial={{ opacity: 0, x: -8 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={spring}
+      >
         <PersonaPills
           clients={clients}
           selectedClient={selectedClient}
@@ -77,19 +91,32 @@ export default function App() {
             </div>
           )}
         </div>
-      </div>
+      </motion.div>
 
       {/* Glowing divider */}
-      <div className="relative z-10 w-px shrink-0 animate-divider-draw">
+      <motion.div
+        className="relative z-10 w-px shrink-0"
+        initial={{ scaleY: 0, opacity: 0 }}
+        animate={{ scaleY: 1, opacity: 1 }}
+        transition={{ duration: 0.5, ease: 'easeOut', delay: 0.15 }}
+        style={{ originY: 0 }}
+      >
         <div
           className={`absolute inset-0 persona-divider transition-all duration-[1200ms] ${isGenerating ? 'animate-breathe' : ''}`}
         />
-      </div>
+      </motion.div>
 
       {/* Right panel — Portfolio */}
-      <div className="relative z-10 flex w-[45%] flex-col h-full animate-panel-right">
+      <motion.div
+        className="relative z-10 flex w-[45%] flex-col h-full"
+        initial={{ opacity: 0, x: 8 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ ...spring, delay: 0.15 }}
+      >
         <RightPanel client={selectedClient} portfolioData={portfolioData} />
-      </div>
+      </motion.div>
+
+      <Toaster position="bottom-left" theme="dark" />
     </div>
   )
 }
