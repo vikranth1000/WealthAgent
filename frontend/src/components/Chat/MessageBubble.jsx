@@ -1,4 +1,5 @@
 import { cloneElement } from 'react'
+import { motion } from 'framer-motion'
 import { parseBlocks } from './blockParser'
 import { BLOCK_COMPONENTS, BlockSkeleton } from './blocks'
 
@@ -34,7 +35,6 @@ function renderMarkdown(content) {
   while (i < lines.length) {
     const line = lines[i]
 
-    // Fenced code block
     if (line.startsWith('```')) {
       const lang = line.slice(3).trim()
       const codeLines = []
@@ -55,11 +55,10 @@ function renderMarkdown(content) {
           </pre>
         </div>
       )
-      i++ // skip closing ```
+      i++
       continue
     }
 
-    // Headings
     if (line.startsWith('### ')) {
       elements.push(
         <h3 key={k++} className="text-slate-300 font-display font-semibold text-sm mt-2.5 mb-1">
@@ -79,7 +78,6 @@ function renderMarkdown(content) {
       continue
     }
 
-    // Bullet list (collect consecutive items)
     if (line.startsWith('- ') || line.startsWith('* ')) {
       const items = []
       while (i < lines.length && (lines[i].startsWith('- ') || lines[i].startsWith('* '))) {
@@ -96,7 +94,6 @@ function renderMarkdown(content) {
       continue
     }
 
-    // Numbered list (collect consecutive items)
     if (/^\d+\.\s/.test(line)) {
       const items = []
       while (i < lines.length && /^\d+\.\s/.test(lines[i])) {
@@ -113,21 +110,18 @@ function renderMarkdown(content) {
       continue
     }
 
-    // Horizontal rule / disclaimer separator
     if (line.trim() === '---' || line.trim() === '***') {
       elements.push(<hr key={k++} className="my-3 border-white/[0.08]" />)
       i++
       continue
     }
 
-    // Empty line -> spacer
     if (line.trim() === '') {
       elements.push(<div key={k++} className="h-2" />)
       i++
       continue
     }
 
-    // Regular line with inline formatting
     elements.push(<p key={k++} className="my-0.5 leading-6 text-slate-300">{parseInline(line)}</p>)
     i++
   }
@@ -144,7 +138,6 @@ const cursor = (
 function appendCursor(elements) {
   if (!elements.length) return [cursor]
   const last = elements[elements.length - 1]
-  // Append cursor inside the last block element so it stays inline with text
   if (last && last.props?.children != null) {
     const children = Array.isArray(last.props.children) ? last.props.children : [last.props.children]
     const patched = cloneElement(last, {}, ...children, cursor)
@@ -177,7 +170,8 @@ function renderContent(content, isStreaming) {
   return elements
 }
 
-// Props: role ('user' | 'assistant'), content (string), streaming (bool), error (bool)
+const bubbleSpring = { type: 'spring', stiffness: 300, damping: 30 }
+
 export default function MessageBubble({ role, content, streaming, error }) {
   const isUser = role === 'user'
 
@@ -186,7 +180,12 @@ export default function MessageBubble({ role, content, streaming, error }) {
 
   if (isUser) {
     return (
-      <div className="flex justify-end mb-3 animate-slide-up">
+      <motion.div
+        className="flex justify-end mb-3"
+        initial={{ opacity: 0, x: 12 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={bubbleSpring}
+      >
         <div
           className="max-w-[68%] rounded-2xl rounded-br-sm px-4 py-2.5 text-sm text-slate-100 font-sans leading-relaxed"
           style={{
@@ -196,32 +195,54 @@ export default function MessageBubble({ role, content, streaming, error }) {
         >
           {content}
         </div>
-      </div>
+      </motion.div>
     )
   }
 
   if (error) {
     return (
-      <div className="flex justify-start mb-4 animate-slide-up">
+      <motion.div
+        className="flex justify-start mb-4"
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={bubbleSpring}
+      >
         <div className="max-w-[78%] rounded-2xl rounded-bl-sm px-4 py-3 text-sm text-rose-400 font-sans border border-rose-500/20 bg-rose-500/[0.06]">
           {rendered}
         </div>
-      </div>
+      </motion.div>
     )
   }
 
   return (
-    <div className="flex justify-start mb-4 animate-slide-up">
-      <div
-        className="max-w-[78%] rounded-2xl rounded-bl-sm px-4 py-3 text-sm text-slate-300 font-sans leading-relaxed shadow-glass"
-        style={{
-          background: 'rgba(255,255,255,0.04)',
-          border: '1px solid rgba(255,255,255,0.07)',
-          borderLeft: '3px solid color-mix(in srgb, var(--persona-primary) 55%, transparent)',
-        }}
-      >
-        {rendered}
+    <motion.div
+      className="flex justify-start mb-4"
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={bubbleSpring}
+    >
+      <div className="relative max-w-[78%] flex">
+        {/* Animated left accent border — draws top-to-bottom */}
+        <motion.div
+          className="w-[3px] rounded-full shrink-0 mr-3 self-stretch"
+          style={{
+            background: 'color-mix(in srgb, var(--persona-primary) 55%, transparent)',
+            originY: 0,
+          }}
+          initial={{ scaleY: 0 }}
+          animate={{ scaleY: 1 }}
+          transition={{ duration: 0.35, ease: 'easeOut', delay: 0.05 }}
+        />
+        <div
+          className="rounded-2xl rounded-bl-sm px-4 py-3 text-sm text-slate-300 font-sans leading-relaxed shadow-glass"
+          style={{
+            background: 'rgba(255,255,255,0.03)',
+            border: '1px solid rgba(255,255,255,0.07)',
+          }}
+        >
+          {rendered}
+        </div>
       </div>
-    </div>
+    </motion.div>
   )
 }
