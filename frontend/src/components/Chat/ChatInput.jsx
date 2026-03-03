@@ -1,8 +1,7 @@
 import { useState } from 'react'
+import { motion } from 'framer-motion'
 import { ArrowUp, Square } from 'lucide-react'
 
-// Controlled chat input bar with send/stop toggle
-// Props: value, onChange, onSubmit, onStop, disabled, isGenerating, placeholder
 export default function ChatInput({ value, onChange, onSubmit, onStop, disabled, isGenerating, placeholder }) {
   const [focused, setFocused] = useState(false)
 
@@ -19,36 +18,45 @@ export default function ChatInput({ value, onChange, onSubmit, onStop, disabled,
 
   return (
     <div className="flex items-center gap-2">
-      <input
-        type="text"
-        value={value}
-        onChange={(e) => onChange?.(e.target.value)}
-        onKeyDown={handleKey}
-        onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
-        disabled={disabled && !isGenerating}
-        placeholder={placeholder ?? 'Ask WealthAgent\u2026'}
-        className="w-full h-11 rounded-xl bg-white/[0.06] border border-white/[0.10] px-4 text-sm text-slate-200 placeholder-slate-600 outline-none font-sans transition-all"
-        style={focused ? { boxShadow: '0 0 0 2px color-mix(in srgb, var(--persona-primary) 35%, transparent)', borderColor: 'color-mix(in srgb, var(--persona-primary) 40%, transparent)' } : {}}
-      />
+      {/* Magic border wrapper activates on focus */}
+      <div className={`flex-1 magic-card ${focused ? 'magic-card--active' : ''}`}>
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => onChange?.(e.target.value)}
+          onKeyDown={handleKey}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+          disabled={disabled && !isGenerating}
+          placeholder={placeholder ?? 'Ask WealthAgent\u2026'}
+          className="magic-card-inner w-full h-11 px-4 text-sm text-slate-200 placeholder-slate-600 outline-none font-sans bg-transparent"
+        />
+      </div>
+
       {isGenerating ? (
-        <button
+        <motion.button
           onClick={onStop}
-          className="h-11 w-11 shrink-0 rounded-xl flex items-center justify-center border border-rose-500/40 bg-rose-500/[0.10] text-rose-400 hover:bg-rose-500/[0.16] transition-all active:scale-95"
+          whileTap={{ scale: 0.92 }}
+          className="h-11 w-11 shrink-0 rounded-xl flex items-center justify-center border border-rose-500/40 bg-rose-500/[0.10] text-rose-400 hover:bg-rose-500/[0.16] transition-all"
           title="Stop generating"
         >
           <Square size={14} className="fill-current" />
-        </button>
+        </motion.button>
       ) : (
-        <button
+        <motion.button
           onClick={onSubmit}
           disabled={disabled || !value?.trim()}
-          className="h-11 w-11 shrink-0 rounded-xl flex items-center justify-center transition-all hover:scale-105 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed"
-          style={{ background: 'var(--persona-primary)' }}
+          whileHover={{ scale: 1.06 }}
+          whileTap={{ scale: 0.92 }}
+          className="h-11 w-11 shrink-0 rounded-xl flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+          style={{
+            background: 'var(--persona-primary)',
+            boxShadow: value?.trim() ? '0 0 18px color-mix(in srgb, var(--persona-primary) 50%, transparent)' : 'none',
+          }}
           title="Send message"
         >
           <ArrowUp size={16} className="text-white" />
-        </button>
+        </motion.button>
       )}
     </div>
   )
