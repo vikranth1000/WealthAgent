@@ -37,12 +37,12 @@ export default {
           '50%': { opacity: '0.9' },
         },
         'panel-left': {
-          '0%': { opacity: '0', transform: 'translateX(-12px)' },
-          '100%': { opacity: '1', transform: 'translateX(0)' },
+          '0%': { transform: 'translateX(-6px)' },
+          '100%': { transform: 'translateX(0)' },
         },
         'panel-right': {
-          '0%': { opacity: '0', transform: 'translateX(12px)' },
-          '100%': { opacity: '1', transform: 'translateX(0)' },
+          '0%': { transform: 'translateX(6px)' },
+          '100%': { transform: 'translateX(0)' },
         },
         'progress-sweep': {
           '0%': { transform: 'translateX(-100%)' },
@@ -55,8 +55,8 @@ export default {
         shimmer: 'shimmer 2s linear infinite',
         'divider-draw': 'divider-draw 0.5s ease-out 0.15s both',
         breathe: 'breathe 2s ease-in-out infinite',
-        'panel-left': 'panel-left 0.4s ease-out both',
-        'panel-right': 'panel-right 0.4s ease-out 0.35s both',
+        'panel-left': 'panel-left 0.35s ease-out',
+        'panel-right': 'panel-right 0.35s ease-out 0.15s',
         'progress-sweep': 'progress-sweep 1.4s ease-in-out infinite',
       },
     },
