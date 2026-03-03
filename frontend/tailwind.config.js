@@ -48,6 +48,9 @@ export default {
           '0%': { transform: 'translateX(-100%)' },
           '100%': { transform: 'translateX(400%)' },
         },
+        'spin-angle': {
+          'to': { '--angle': '360deg' },
+        },
       },
       animation: {
         'fade-in': 'fade-in 0.3s ease-out',
@@ -58,6 +61,7 @@ export default {
         'panel-left': 'panel-left 0.35s ease-out',
         'panel-right': 'panel-right 0.35s ease-out 0.15s',
         'progress-sweep': 'progress-sweep 1.4s ease-in-out infinite',
+        'spin-angle': 'spin-angle 3s linear infinite',
       },
     },
   },

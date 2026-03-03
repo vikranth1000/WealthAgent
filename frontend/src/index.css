@@ -30,10 +30,6 @@ html, body {
 
 /* ─── Magic border (Skiper UI conic-gradient sweep) ─── */
 
-@keyframes spin-angle {
-  to { --angle: 360deg; }
-}
-
 /* Wrapper: use `padding: 1px` to reveal the gradient beneath the inner card */
 .magic-card {
   position: relative;
@@ -59,6 +55,7 @@ html, body {
   z-index: 0;
 }
 
+/* Active state: add .magic-card--active to the *outer wrapper* (.magic-card), not .magic-card-inner */
 .magic-card:hover::before,
 .magic-card--active::before {
   opacity: 1;
