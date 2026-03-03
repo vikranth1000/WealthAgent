@@ -1,4 +1,3 @@
-import { X } from 'lucide-react'
 import MetricCards from '../Dashboard/MetricCards.jsx'
 import AllocationChart from '../Dashboard/AllocationChart.jsx'
 import PerformanceChart from '../Dashboard/PerformanceChart.jsx'
@@ -8,115 +7,125 @@ import HoldingsTable from '../Dashboard/HoldingsTable.jsx'
 function Section({ title, children }) {
   return (
     <div>
-      <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">
+      <p className="mb-2.5 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-700 font-sans">
         {title}
-      </h3>
+      </p>
       {children}
     </div>
   )
 }
 
-function Skeleton({ className }) {
-  return <div className={`animate-pulse bg-gray-200 rounded-xl ${className}`} />
-}
-
 function LoadingSkeleton() {
   return (
-    <div className="flex-1 overflow-y-auto p-4 space-y-4">
+    <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
       <div className="grid grid-cols-2 gap-2">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="bg-white rounded-xl border border-gray-200 px-3 py-2.5">
-            <Skeleton className="h-3 w-16 mb-2" />
-            <Skeleton className="h-5 w-20" />
+          <div key={i} className="rounded-xl bg-white/[0.05] border border-white/[0.06] px-3 py-2.5">
+            <div className="h-2.5 w-14 rounded-full bg-white/[0.08] animate-pulse mb-2" />
+            <div className="h-5 w-20 rounded-full bg-white/[0.08] animate-pulse" />
           </div>
         ))}
       </div>
-      <Skeleton className="h-32 w-full" />
-      <Skeleton className="h-40 w-full" />
-      <Skeleton className="h-32 w-full" />
-      <Skeleton className="h-48 w-full" />
+      {[32, 40, 32, 48].map((h, i) => (
+        <div
+          key={i}
+          className="rounded-xl bg-white/[0.04] border border-white/[0.06] animate-pulse"
+          style={{ height: `${h * 4}px` }}
+        />
+      ))}
     </div>
   )
 }
 
-export default function RightPanel({ client, portfolioData, isOpen, onClose, width, onResizeStart }) {
+export default function RightPanel({ client, portfolioData }) {
   const { portfolio, analysis, performanceHistory, holdingsDetail, loading, error } = portfolioData
 
-  if (!isOpen) return null
+  const metrics = analysis ? {
+    totalValue: analysis.total_value,
+    ytdReturn: analysis.total_return,
+    sharpe: analysis.sharpe_ratio,
+    maxDrawdown: analysis.max_drawdown,
+  } : {}
 
-  const metrics = analysis
-    ? {
-        totalValue: analysis.total_value,
-        ytdReturn: analysis.total_return,
-        sharpe: analysis.sharpe_ratio,
-        maxDrawdown: analysis.max_drawdown,
-      }
-    : {}
-
-  // Use holdingsDetail if available (has prices + P&L), fallback to portfolio holdings
   const displayHoldings = holdingsDetail.length > 0 ? holdingsDetail : portfolio?.holdings
 
   return (
-    <aside
-      className="relative shrink-0 flex flex-col bg-gray-50 border-l border-gray-200 overflow-hidden"
-      style={{ width: `${width}px` }}
-    >
-      <div
-        className="absolute top-0 left-0 h-full w-1.5 -translate-x-1/2 cursor-col-resize hover:bg-teal/20 transition-colors"
-        onMouseDown={onResizeStart}
-        role="separator"
-        aria-orientation="vertical"
-        aria-label="Resize dashboard panel"
-      />
-      <div className="flex items-center justify-between px-4 py-3 bg-white border-b border-gray-200 shrink-0">
-        <div>
-          <h2 className="text-[13px] font-semibold text-navy">Portfolio Dashboard</h2>
-          {client && <p className="text-[11px] text-gray-500 mt-0.5">{client.name}</p>}
-        </div>
-        <button
-          onClick={onClose}
-          className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
-          title="Close panel"
-        >
-          <X size={14} />
-        </button>
+    <div className="flex flex-col h-full">
+      {/* Client header */}
+      <div className="px-6 pt-6 pb-5 shrink-0 border-b border-white/[0.06]">
+        {client ? (
+          <div className="animate-fade-in">
+            <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-700 mb-2 font-sans">
+              Portfolio
+            </p>
+            <h2 className="font-display text-xl font-semibold text-slate-100 leading-snug">
+              {client.name}
+            </h2>
+            <div className="flex items-center gap-2.5 mt-1.5">
+              <span className="text-xs text-slate-600 font-sans capitalize">
+                {client.persona?.replace(/_/g, ' ')}
+              </span>
+              {analysis && (
+                <span
+                  className="rounded-full px-2 py-0.5 text-[11px] font-medium font-mono"
+                  style={{
+                    color: analysis.total_return >= 0 ? '#34D399' : '#F87171',
+                    background: analysis.total_return >= 0
+                      ? 'rgba(52,211,153,0.10)'
+                      : 'rgba(248,113,113,0.10)',
+                  }}
+                >
+                  {analysis.total_return >= 0 ? '+' : ''}
+                  {(analysis.total_return * 100).toFixed(1)}% YTD
+                </span>
+              )}
+            </div>
+            {analysis && (
+              <p
+                className="font-mono text-3xl font-semibold mt-3 transition-all duration-700"
+                style={{ color: 'var(--persona-primary)' }}
+              >
+                $
+                {analysis.total_value?.toLocaleString('en-US', {
+                  maximumFractionDigits: 0,
+                })}
+              </p>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-2.5">
+            <div className="h-2.5 w-16 rounded-full bg-white/[0.06] animate-pulse" />
+            <div className="h-6 w-40 rounded-full bg-white/[0.06] animate-pulse" />
+            <div className="h-8 w-32 rounded-full bg-white/[0.06] animate-pulse mt-3" />
+          </div>
+        )}
       </div>
 
       {loading && <LoadingSkeleton />}
 
       {!loading && error && (
-        <div className="flex-1 flex items-center justify-center text-red-400 text-sm px-4 text-center">
+        <div className="flex-1 flex items-center justify-center text-rose-400/60 text-sm px-6 text-center font-sans">
           {error}
         </div>
       )}
 
       {!loading && !error && (
-        <div key={client?.id} className="flex-1 overflow-y-auto p-4 space-y-4">
+        <div key={client?.id} className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
           <MetricCards metrics={metrics} />
-
           <Section title="Asset Allocation">
             <AllocationChart data={analysis?.current_allocation} />
           </Section>
-
           <Section title="Performance">
             <PerformanceChart data={performanceHistory} />
           </Section>
-
           <Section title="Sector Exposure">
             <SectorChart data={analysis?.sector_breakdown} />
           </Section>
-
           <Section title="Holdings">
             <HoldingsTable holdings={displayHoldings} enhanced={holdingsDetail.length > 0} />
           </Section>
         </div>
       )}
-
-      <div className="px-4 py-2 border-t border-gray-200 bg-white shrink-0">
-        <p className="text-[10px] text-gray-400 text-center">
-          Charts powered by Recharts &middot; Data from yfinance
-        </p>
-      </div>
-    </aside>
+    </div>
   )
 }
