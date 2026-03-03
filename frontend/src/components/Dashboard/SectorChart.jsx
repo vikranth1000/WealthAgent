@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { BarChart, Bar, XAxis, YAxis, Tooltip, LabelList, ResponsiveContainer } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, Tooltip, LabelList, CartesianGrid, ResponsiveContainer } from 'recharts'
 import { useAnimatedObject } from '../../hooks/useAnimatedValue'
 
 // Props: data — object like { "Technology": 0.45, "Fixed Income": 0.3, ... }
