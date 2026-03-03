@@ -134,8 +134,6 @@ function renderMarkdown(content) {
   return elements
 }
 
-import { cloneElement } from 'react'
-
 const cursor = (
   <span
     className="inline-block ml-0.5 h-3.5 w-0.5 rounded-full animate-pulse"
