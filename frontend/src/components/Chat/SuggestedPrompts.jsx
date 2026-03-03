@@ -37,16 +37,13 @@ export default function SuggestedPrompts({ persona, onSelect, compact, dynamicSu
   const isDynamic = dynamicSuggestions && dynamicSuggestions.length > 0
 
   return (
-    <div className={`flex flex-wrap gap-2 px-4 ${compact ? 'pt-2 pb-1.5' : 'py-3'}`}>
+    <div className="flex flex-wrap gap-1.5 px-5 py-2.5 shrink-0">
       {prompts.map((prompt) => (
         <button
           key={prompt}
           onClick={() => onSelect?.(prompt)}
-          className={`rounded-lg border transition-all active:scale-95 shadow-sm ${
-            isDynamic
-              ? 'border-teal/30 bg-teal/5 text-teal hover:border-teal/50 hover:bg-teal/10 hover:shadow-md'
-              : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50 hover:shadow-md'
-          } ${compact ? 'px-2.5 py-1 text-xs' : 'px-3 py-1.5 text-xs'}`}
+          className="rounded-full border border-white/[0.10] bg-transparent px-3 py-1.5 text-xs text-slate-500 transition-all hover:text-slate-300 hover:border-white/[0.22] hover:bg-white/[0.04] font-sans whitespace-nowrap"
+          style={isDynamic ? { borderColor: 'color-mix(in srgb, var(--persona-primary) 25%, rgba(255,255,255,0.10))' } : {}}
         >
           {prompt}
         </button>
