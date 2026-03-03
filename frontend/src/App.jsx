@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import RightPanel from './components/Layout/RightPanel.jsx'
 import ChatWindow from './components/Chat/ChatWindow.jsx'
 import PersonaPills from './components/Chat/PersonaPills.jsx'
