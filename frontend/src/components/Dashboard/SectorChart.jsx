@@ -2,12 +2,8 @@ import { useMemo } from 'react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, LabelList, CartesianGrid, ResponsiveContainer } from 'recharts'
 import { useAnimatedObject } from '../../hooks/useAnimatedValue'
 
-// Props: data — object like { "Technology": 0.45, "Fixed Income": 0.3, ... }
 export default function SectorChart({ data }) {
-  const animated = useAnimatedObject(data, 700)
-
-  // Only include rows present in the target data so ghost sectors
-  // don't linger in the Y-axis while they animate out.
+  const animated = useAnimatedObject(data, 400)
   const targetKeys = useMemo(() => new Set(data ? Object.keys(data) : []), [data])
 
   const chartData = useMemo(() => {
@@ -20,13 +16,12 @@ export default function SectorChart({ data }) {
 
   if (!data || Object.keys(data).length === 0) {
     return (
-      <div className="h-40 flex items-center justify-center text-slate-500 text-sm">
-        No sector data
+      <div className="h-full flex items-center justify-center text-[11px] font-mono" style={{ color: '#444444' }}>
+        NO DATA
       </div>
     )
   }
 
-  // Base height on target data so the chart doesn't resize mid-animation
   const height = Math.max(80, Object.keys(data).length * 28 + 16)
 
   return (
@@ -34,33 +29,36 @@ export default function SectorChart({ data }) {
       <BarChart
         data={chartData}
         layout="vertical"
-        margin={{ top: 0, right: 44, left: 0, bottom: 0 }}
+        margin={{ top: 4, right: 48, left: 4, bottom: 4 }}
       >
-        <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" horizontal={false} />
+        <CartesianGrid strokeDasharray="1 4" stroke="#1E1E1E" horizontal={false} />
         <XAxis type="number" hide />
         <YAxis
           type="category"
           dataKey="name"
-          width={96}
-          tick={{ fill: '#6e6e73', fontSize: 11, fontFamily: '"Geist Mono"' }}
+          width={92}
+          tick={{ fill: '#888888', fontSize: 10, fontFamily: 'monospace' }}
+          axisLine={false}
+          tickLine={false}
         />
         <Tooltip
           formatter={(v) => `${v.toFixed(1)}%`}
           contentStyle={{
-            background: 'rgba(255,255,255,0.95)',
-            border: '1px solid rgba(0,0,0,0.10)',
-            borderRadius: '12px',
-            color: '#1c1c1e',
-            fontSize: '12px',
-            fontFamily: '-apple-system, sans-serif',
+            background: '#111111',
+            border: '1px solid #FF9900',
+            borderRadius: 0,
+            color: '#FFFFFF',
+            fontSize: '11px',
+            fontFamily: 'monospace',
           }}
+          cursor={{ fill: 'rgba(255,153,0,0.05)' }}
         />
-        <Bar dataKey="value" fill="var(--persona-primary)" radius={[0, 4, 4, 0]} isAnimationActive={true} animationBegin={0} animationDuration={700} animationEasing="ease-out">
+        <Bar dataKey="value" fill="#FF9900" radius={0} isAnimationActive={false}>
           <LabelList
             dataKey="value"
             position="right"
             formatter={(v) => `${v.toFixed(1)}%`}
-            style={{ fontSize: 11, fill: '#6e6e73', fontWeight: 500 }}
+            style={{ fontSize: 10, fill: '#FF9900', fontFamily: 'monospace' }}
           />
         </Bar>
       </BarChart>
