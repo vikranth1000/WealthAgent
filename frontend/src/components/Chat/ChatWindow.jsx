@@ -183,7 +183,7 @@ export default function ChatWindow({ client, portfolioData, onGeneratingChange }
               {/* Popover menu */}
               {actionsOpen && (
                 <div className="absolute bottom-full left-0 mb-2 w-64 rounded-2xl overflow-hidden z-50 animate-slide-up" style={{ border: '1px solid rgba(0,0,0,0.10)', background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', boxShadow: '0 8px 32px rgba(0,0,0,0.10)' }}>
-                  <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06]">
+                  <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1px solid rgba(0,0,0,0.08)' }}>
                     <span className="text-[10px] font-bold uppercase tracking-widest font-sans" style={{ color: '#6e6e73' }}>AI Actions</span>
                     <button onClick={() => setActionsOpen(false)} className="transition-colors" style={{ color: '#6e6e73' }}>
                       <X size={12} />
