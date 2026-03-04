@@ -1,26 +1,64 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Toaster } from 'sonner'
-import RightPanel from './components/Layout/RightPanel.jsx'
-import ChatWindow from './components/Chat/ChatWindow.jsx'
 import PersonaPills from './components/Chat/PersonaPills.jsx'
+import HeroCard from './components/Dashboard/HeroCard.jsx'
+import MetricCards from './components/Dashboard/MetricCards.jsx'
+import AllocationChart from './components/Dashboard/AllocationChart.jsx'
+import PerformanceChart from './components/Dashboard/PerformanceChart.jsx'
+import SectorChart from './components/Dashboard/SectorChart.jsx'
+import HoldingsTable from './components/Dashboard/HoldingsTable.jsx'
+import ChatBar from './components/Chat/ChatBar.jsx'
 import { useClients } from './hooks/useClients.js'
 import { usePortfolio } from './hooks/usePortfolio.js'
 
 const PERSONA_COLORS = {
-  conservative_retiree: '#3B82F6',
-  aggressive_growth: '#F59E0B',
-  young_professional: '#A855F7',
-  institutional: '#2DD4BF',
+  conservative_retiree: '#0071E3',
+  aggressive_growth: '#FF9500',
+  young_professional: '#AF52DE',
+  institutional: '#34C759',
 }
 
-const spring = { type: 'spring', stiffness: 260, damping: 28 }
+const cardVariants = {
+  hidden: { opacity: 0, y: 16 },
+  visible: (i) => ({
+    opacity: 1,
+    y: 0,
+    transition: { type: 'spring', stiffness: 280, damping: 28, delay: i * 0.06 },
+  }),
+}
+
+function Section({ title, children }) {
+  return (
+    <div>
+      {title && <p className="apple-label mb-3">{title}</p>}
+      {children}
+    </div>
+  )
+}
+
+function LoadingSkeleton() {
+  return (
+    <div className="p-6 space-y-4">
+      <div className="grid grid-cols-2 gap-4">
+        <div className="rounded-[20px] h-[148px] bg-white/50 animate-pulse" />
+        <div className="grid grid-cols-2 gap-2">
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="rounded-[16px] bg-white/50 animate-pulse h-[68px]" />
+          ))}
+        </div>
+      </div>
+      {[192, 220, 180].map((h, i) => (
+        <div key={i} className="rounded-[16px] bg-white/50 animate-pulse" style={{ height: h }} />
+      ))}
+    </div>
+  )
+}
 
 export default function App() {
   const { clients, loading: clientsLoading } = useClients()
   const [selectedClient, setSelectedClient] = useState(null)
   const portfolioData = usePortfolio(selectedClient?.id)
-  const [isGenerating, setIsGenerating] = useState(false)
 
   useEffect(() => {
     if (clients.length > 0 && !selectedClient) {
@@ -38,39 +76,34 @@ export default function App() {
   }, [clients, selectedClient])
 
   useEffect(() => {
-    const color = PERSONA_COLORS[selectedClient?.persona] ?? '#3B82F6'
+    const color = PERSONA_COLORS[selectedClient?.persona] ?? '#0071E3'
     document.documentElement.style.setProperty('--persona-primary', color)
   }, [selectedClient?.persona])
 
-  const accentColor = PERSONA_COLORS[selectedClient?.persona] ?? '#3B82F6'
+  const { portfolio, analysis, performanceHistory, holdingsDetail, loading, error } = portfolioData
+
+  const metrics = analysis
+    ? {
+        totalValue: analysis.total_value,
+        ytdReturn: analysis.total_return,
+        sharpe: analysis.sharpe_ratio,
+        maxDrawdown: analysis.max_drawdown,
+      }
+    : {}
+
+  const displayHoldings = holdingsDetail.length > 0 ? holdingsDetail : portfolio?.holdings ?? []
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-[#05080F] font-sans">
-      {/* Animated background orbs */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
-        <motion.div
-          className="absolute -top-48 -left-48 h-[500px] w-[500px] rounded-full blur-3xl"
-          animate={{ backgroundColor: accentColor, opacity: 0.04 }}
-          transition={{ duration: 1.2, ease: 'easeInOut' }}
-        />
-        <motion.div
-          className="absolute top-1/2 left-1/3 -translate-y-1/2 h-80 w-80 rounded-full blur-3xl"
-          animate={{ backgroundColor: accentColor, opacity: 0.03 }}
-          transition={{ duration: 1.2, ease: 'easeInOut', delay: 0.15 }}
-        />
-        <motion.div
-          className="absolute -bottom-40 right-16 h-72 w-72 rounded-full blur-3xl"
-          animate={{ backgroundColor: accentColor, opacity: 0.04 }}
-          transition={{ duration: 1.2, ease: 'easeInOut', delay: 0.3 }}
-        />
-      </div>
-
-      {/* Left panel — Chat */}
-      <motion.div
-        className="relative z-10 flex w-[55%] flex-col h-full bg-[#05080F]/90"
-        initial={{ opacity: 0, x: -8 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={spring}
+    <div
+      className="h-screen w-screen overflow-hidden flex flex-col font-sans"
+      style={{
+        background: 'radial-gradient(ellipse at 20% 15%, #dde8ff 0%, #f0f4ff 45%, #eef0fa 100%)',
+      }}
+    >
+      {/* Top bar */}
+      <div
+        className="shrink-0 z-30 relative apple-glass-secondary"
+        style={{ borderBottom: '1px solid rgba(0,0,0,0.06)' }}
       >
         <PersonaPills
           clients={clients}
@@ -78,45 +111,96 @@ export default function App() {
           onSelectClient={setSelectedClient}
           loading={clientsLoading}
         />
-        <div className="flex-1 min-h-0">
-          {selectedClient ? (
-            <ChatWindow
-              client={selectedClient}
-              portfolioData={portfolioData}
-              onGeneratingChange={setIsGenerating}
-            />
-          ) : (
-            <div className="flex h-full items-center justify-center text-slate-600 text-sm">
-              {clientsLoading ? 'Loading clients…' : 'Select a client to begin'}
+      </div>
+
+      {/* Scrollable bento canvas */}
+      <main
+        className="flex-1 overflow-y-auto relative z-10"
+        style={{ paddingBottom: '96px' }}
+      >
+        {loading ? (
+          <LoadingSkeleton />
+        ) : error ? (
+          <div
+            className="flex h-full items-center justify-center text-[13px]"
+            style={{ color: '#6e6e73' }}
+          >
+            {error}
+          </div>
+        ) : (
+          <div className="p-6 space-y-4">
+            {/* Row 1: Hero + Metrics */}
+            <div className="grid grid-cols-2 gap-4">
+              <HeroCard client={selectedClient} analysis={analysis} />
+              <MetricCards metrics={metrics} />
             </div>
-          )}
-        </div>
-      </motion.div>
 
-      {/* Glowing divider */}
-      <motion.div
-        className="relative z-10 w-px shrink-0"
-        initial={{ scaleY: 0, opacity: 0 }}
-        animate={{ scaleY: 1, opacity: 1 }}
-        transition={{ duration: 0.5, ease: 'easeOut', delay: 0.15 }}
-        style={{ originY: 0 }}
-      >
-        <div
-          className={`absolute inset-0 persona-divider transition-all duration-[1200ms] ${isGenerating ? 'animate-breathe' : ''}`}
-        />
-      </motion.div>
+            {/* Row 2: Performance chart (full width) */}
+            <motion.div
+              className="apple-glass-secondary rounded-[16px] p-5"
+              custom={2}
+              variants={cardVariants}
+              initial="hidden"
+              animate="visible"
+              key={`${selectedClient?.id}-perf`}
+            >
+              <Section title="Performance">
+                <PerformanceChart data={performanceHistory} />
+              </Section>
+            </motion.div>
 
-      {/* Right panel — Portfolio */}
-      <motion.div
-        className="relative z-10 flex w-[45%] flex-col h-full"
-        initial={{ opacity: 0, x: 8 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ ...spring, delay: 0.15 }}
-      >
-        <RightPanel client={selectedClient} portfolioData={portfolioData} />
-      </motion.div>
+            {/* Row 3: Allocation + Sector (50/50) */}
+            <div className="grid grid-cols-2 gap-4">
+              <motion.div
+                className="apple-glass-secondary rounded-[16px] p-5"
+                custom={3}
+                variants={cardVariants}
+                initial="hidden"
+                animate="visible"
+                key={`${selectedClient?.id}-alloc`}
+              >
+                <Section title="Asset Allocation">
+                  <AllocationChart data={analysis?.current_allocation} />
+                </Section>
+              </motion.div>
+              <motion.div
+                className="apple-glass-secondary rounded-[16px] p-5"
+                custom={4}
+                variants={cardVariants}
+                initial="hidden"
+                animate="visible"
+                key={`${selectedClient?.id}-sector`}
+              >
+                <Section title="Sector Exposure">
+                  <SectorChart data={analysis?.sector_breakdown} />
+                </Section>
+              </motion.div>
+            </div>
 
-      <Toaster position="bottom-left" theme="dark" />
+            {/* Row 4: Holdings table (full width) */}
+            <motion.div
+              className="apple-glass-secondary rounded-[16px] p-5"
+              custom={5}
+              variants={cardVariants}
+              initial="hidden"
+              animate="visible"
+              key={`${selectedClient?.id}-holdings`}
+            >
+              <Section title="Holdings">
+                <HoldingsTable
+                  holdings={displayHoldings}
+                  enhanced={holdingsDetail.length > 0}
+                />
+              </Section>
+            </motion.div>
+          </div>
+        )}
+      </main>
+
+      {/* Floating chat bar */}
+      <ChatBar client={selectedClient} portfolioData={portfolioData} />
+
+      <Toaster position="top-right" theme="light" />
     </div>
   )
 }
