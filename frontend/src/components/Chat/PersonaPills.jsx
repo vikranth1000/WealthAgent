@@ -1,4 +1,4 @@
-export default function PersonaPills({ clients, selectedClient, onSelectClient, loading }) {
+export default function PersonaPills({ clients = [], selectedClient, onSelectClient, loading }) {
   if (loading) {
     return (
       <div className="flex items-center h-full">
@@ -22,9 +22,11 @@ export default function PersonaPills({ clients, selectedClient, onSelectClient, 
         return (
           <button
             key={client.id}
+            type="button"
             onClick={() => onSelectClient(client)}
-            className="flex items-center h-full px-4 text-[11px] font-mono transition-colors"
+            className="flex items-center h-full px-4 text-[11px] font-mono"
             style={{
+              borderRadius: 0,
               borderRight: '1px solid #1E1E1E',
               background: isActive ? 'rgba(255,153,0,0.08)' : 'transparent',
               color: isActive ? '#FF9900' : '#888888',
