@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { ChevronUp, ChevronDown } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 
 const BASE_COLS = [
   { key: 'ticker', label: 'Ticker' },
@@ -90,30 +91,40 @@ export default function HoldingsTable({ holdings = [], enhanced = false }) {
           </tr>
         </thead>
         <tbody>
-          {sorted.map((h, i) => (
-            <tr key={h.ticker || i} className="border-b border-white/[0.04] hover:bg-white/[0.03] transition-colors">
-              {COLS.map(({ key }) => (
-                <td
-                  key={key}
-                  className={
-                    key === 'ticker'
-                      ? 'px-2 py-2.5 font-mono font-semibold text-slate-300 text-xs'
-                      : 'px-2 py-2.5 font-mono text-xs text-slate-500'
-                  }
-                >
-                  {key === 'unrealized_pnl' ? (
-                    <span className={
-                      h[key] >= 0
-                        ? 'rounded-full px-1.5 py-0.5 font-mono text-[10px] text-emerald-400 bg-emerald-500/10'
-                        : 'rounded-full px-1.5 py-0.5 font-mono text-[10px] text-rose-400 bg-rose-500/10'
-                    }>
-                      {formatCell(key, h[key])}
-                    </span>
-                  ) : key === 'ticker' ? h.ticker : formatCell(key, h[key])}
-                </td>
-              ))}
-            </tr>
-          ))}
+          <AnimatePresence mode="popLayout" initial={false}>
+            {sorted.map((h, i) => (
+              <motion.tr
+                key={h.ticker || i}
+                layout
+                initial={{ opacity: 0, x: -6 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 6 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 30, delay: i * 0.02 }}
+                className="border-b border-white/[0.04] hover:bg-white/[0.03] transition-colors"
+              >
+                {COLS.map(({ key }) => (
+                  <td
+                    key={key}
+                    className={
+                      key === 'ticker'
+                        ? 'px-2 py-2.5 font-mono font-semibold text-slate-300 text-xs'
+                        : 'px-2 py-2.5 font-mono text-xs text-slate-500'
+                    }
+                  >
+                    {key === 'unrealized_pnl' ? (
+                      <span className={
+                        h[key] >= 0
+                          ? 'rounded-full px-1.5 py-0.5 font-mono text-[10px] text-emerald-400 bg-emerald-500/10'
+                          : 'rounded-full px-1.5 py-0.5 font-mono text-[10px] text-rose-400 bg-rose-500/10'
+                      }>
+                        {formatCell(key, h[key])}
+                      </span>
+                    ) : key === 'ticker' ? h.ticker : formatCell(key, h[key])}
+                  </td>
+                ))}
+              </motion.tr>
+            ))}
+          </AnimatePresence>
         </tbody>
       </table>
     </div>
