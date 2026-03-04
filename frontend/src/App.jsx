@@ -42,10 +42,6 @@ export default function App() {
     if (clients.length > 0 && !selectedClient) setSelectedClient(clients[0])
   }, [clients, selectedClient])
 
-  useEffect(() => {
-    document.documentElement.style.setProperty('--persona-primary', '#FF9900')
-  }, [])
-
   const { portfolio, analysis, performanceHistory, holdingsDetail, loading } = portfolioData
   const displayHoldings = holdingsDetail.length > 0 ? holdingsDetail : portfolio?.holdings ?? []
 
