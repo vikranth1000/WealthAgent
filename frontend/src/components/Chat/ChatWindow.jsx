@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { MessageSquare, Trash2, Zap, ArrowRightLeft, Scissors, BarChart3, FileText, X } from 'lucide-react'
-import { AnimatePresence } from 'framer-motion'
 import { toast } from 'sonner'
 import { useWebSocket } from '../../hooks/useWebSocket'
 import MessageBubble from './MessageBubble'
@@ -122,17 +121,15 @@ export default function ChatWindow({ client, portfolioData, onGeneratingChange }
         <div className="flex-1 relative min-h-0">
           <div className="h-full overflow-y-auto" style={{ background: '#0D0D0D' }}>
             <div className="px-4 py-3">
-              <AnimatePresence initial={false}>
-                {messages.map((msg, i) => (
-                  <MessageBubble
-                    key={i}
-                    role={msg.role}
-                    content={msg.content}
-                    streaming={msg.streaming}
-                    error={msg.error}
-                  />
-                ))}
-              </AnimatePresence>
+              {messages.map((msg, i) => (
+                <MessageBubble
+                  key={i}
+                  role={msg.role}
+                  content={msg.content}
+                  streaming={msg.streaming}
+                  error={msg.error}
+                />
+              ))}
               {activeAgent && (
                 <div className="mb-3 flex justify-start">
                   <AgentIndicator agent={activeAgent} />
