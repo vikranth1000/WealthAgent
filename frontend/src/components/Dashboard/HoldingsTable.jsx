@@ -17,7 +17,7 @@ const ENHANCED_COLS = [
 ]
 
 function SortIcon({ active, dir }) {
-  if (!active) return <ChevronUp size={10} className="text-slate-700" />
+  if (!active) return <ChevronUp size={10} style={{ color: '#c7c7cc' }} />
   return dir === 'asc'
     ? <ChevronDown size={10} style={{ color: 'var(--persona-primary)' }} />
     : <ChevronUp size={10} style={{ color: 'var(--persona-primary)' }} />
@@ -39,14 +39,13 @@ function formatCell(key, value) {
   return String(value)
 }
 
-// Props: holdings — array, enhanced — boolean (if true, data includes price/value/pnl)
 export default function HoldingsTable({ holdings = [], enhanced = false }) {
   const [sortKey, setSortKey] = useState('ticker')
   const [sortDir, setSortDir] = useState('asc')
 
   if (!holdings.length) {
     return (
-      <div className="text-slate-500 text-sm text-center py-4">
+      <div className="text-[13px] text-center py-6" style={{ color: '#6e6e73' }}>
         No holdings
       </div>
     )
@@ -74,15 +73,25 @@ export default function HoldingsTable({ holdings = [], enhanced = false }) {
   return (
     <div className="overflow-x-auto">
       <table className="w-full">
-        <thead>
-          <tr className="border-b border-white/[0.08]">
+        <thead
+          style={{
+            position: 'sticky',
+            top: 0,
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
+            background: 'rgba(255,255,255,0.90)',
+            zIndex: 1,
+          }}
+        >
+          <tr style={{ borderBottom: '1px solid rgba(0,0,0,0.08)' }}>
             {COLS.map(({ key, label }) => (
               <th
                 key={key}
-                className="px-2 pb-2.5 text-left text-[10px] font-bold uppercase tracking-widest text-slate-700 font-sans cursor-pointer hover:text-slate-400 transition-colors select-none"
+                className="px-2 pb-2.5 text-left cursor-pointer select-none transition-colors"
+                style={{ color: '#6e6e73' }}
                 onClick={() => handleSort(key)}
               >
-                <span className="flex items-center gap-1">
+                <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest">
                   {label}
                   <SortIcon active={sortKey === key} dir={sortDir} />
                 </span>
@@ -100,26 +109,35 @@ export default function HoldingsTable({ holdings = [], enhanced = false }) {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 6 }}
                 transition={{ type: 'spring', stiffness: 300, damping: 30, delay: i * 0.02 }}
-                className="border-b border-white/[0.04] hover:bg-white/[0.03] transition-colors"
+                className="transition-colors cursor-default"
+                style={{ borderBottom: '1px solid rgba(0,0,0,0.05)' }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(0,0,0,0.02)')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
               >
                 {COLS.map(({ key }) => (
                   <td
                     key={key}
-                    className={
-                      key === 'ticker'
-                        ? 'px-2 py-2.5 font-mono font-semibold text-slate-300 text-xs'
-                        : 'px-2 py-2.5 font-mono text-xs text-slate-500'
-                    }
+                    className="px-2 py-2.5 font-mono text-xs"
+                    style={{
+                      color: key === 'ticker' ? '#1c1c1e' : '#48484a',
+                      fontWeight: key === 'ticker' ? 600 : 400,
+                    }}
                   >
                     {key === 'unrealized_pnl' ? (
-                      <span className={
-                        h[key] >= 0
-                          ? 'rounded-full px-1.5 py-0.5 font-mono text-[10px] text-emerald-400 bg-emerald-500/10'
-                          : 'rounded-full px-1.5 py-0.5 font-mono text-[10px] text-rose-400 bg-rose-500/10'
-                      }>
+                      <span
+                        className="rounded-full px-1.5 py-0.5 font-mono text-[10px]"
+                        style={{
+                          color: h[key] >= 0 ? '#34C759' : '#FF3B30',
+                          background: h[key] >= 0 ? 'rgba(52,199,89,0.10)' : 'rgba(255,59,48,0.10)',
+                        }}
+                      >
                         {formatCell(key, h[key])}
                       </span>
-                    ) : key === 'ticker' ? h.ticker : formatCell(key, h[key])}
+                    ) : key === 'ticker' ? (
+                      h.ticker
+                    ) : (
+                      formatCell(key, h[key])
+                    )}
                   </td>
                 ))}
               </motion.tr>
