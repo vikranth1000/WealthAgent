@@ -8,7 +8,7 @@
 @property --persona-primary {
   syntax: '<color>';
   inherits: true;
-  initial-value: #3B82F6;
+  initial-value: #0071E3;
 }
 
 @property --angle {
@@ -20,29 +20,31 @@
 /* ─── Global base ─── */
 
 html, body {
-  background: #05080F;
+  background: #f0f4ff;
 }
 
 :root {
-  --persona-primary: #3B82F6;
+  --persona-primary: #0071E3;
   transition: --persona-primary 1.2s ease;
 }
 
-/* ─── Magic border (Skiper UI conic-gradient sweep) ─── */
+/* ─── Magic border (conic-gradient sweep — works in light mode at reduced opacity) ─── */
 
-/* Wrapper: use `padding: 1px` to reveal the gradient beneath the inner card */
+@keyframes spin-angle {
+  to { --angle: 360deg; }
+}
+
 .magic-card {
   position: relative;
   padding: 1px;
-  border-radius: 12px;
+  border-radius: 16px;
 }
 
-/* The spinning gradient — hidden by default, shown on hover or .magic-card--active */
 .magic-card::before {
   content: '';
   position: absolute;
   inset: 0;
-  border-radius: 12px;
+  border-radius: 16px;
   background: conic-gradient(
     from var(--angle),
     transparent 0%,
@@ -55,85 +57,99 @@ html, body {
   z-index: 0;
 }
 
-/* Active state: add .magic-card--active to the *outer wrapper* (.magic-card), not .magic-card-inner */
 .magic-card:hover::before,
 .magic-card--active::before {
-  opacity: 1;
+  opacity: 0.55;
 }
 
-/* Inner card: sits above the gradient */
 .magic-card-inner {
   position: relative;
   z-index: 1;
-  border-radius: 11px;
-  background: #090D1C;
+  border-radius: 15px;
+  background: rgba(255, 255, 255, 0.92);
 }
 
-/* ─── Persona-reactive utilities ─── */
+/* ─── Apple-style utilities ─── */
 
 @layer utilities {
-  .glass-dark {
+  /* Primary glass — hero card, metric cards */
+  .apple-glass-primary {
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    background: rgba(255, 255, 255, 0.72);
+    border: 1px solid rgba(255, 255, 255, 0.88);
+    box-shadow: 0 2px 20px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.04);
+  }
+
+  /* Secondary glass — chart containers, top bar, holdings */
+  .apple-glass-secondary {
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.78);
+    box-shadow: 0 1px 12px rgba(0, 0, 0, 0.04);
   }
 
-  .glass-darker {
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    background: rgba(0, 0, 0, 0.20);
-    border: 1px solid rgba(255, 255, 255, 0.06);
+  /* Apple label style — 11px uppercase section titles */
+  .apple-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #6e6e73;
   }
 
+  /* Persona utilities — updated for light mode */
   .persona-border {
-    border: 1px solid color-mix(in srgb, var(--persona-primary) 30%, transparent);
+    border: 1px solid color-mix(in srgb, var(--persona-primary) 25%, transparent);
   }
 
   .persona-border-glow {
-    border: 1px solid color-mix(in srgb, var(--persona-primary) 50%, transparent);
-    box-shadow: 0 0 12px color-mix(in srgb, var(--persona-primary) 35%, transparent),
-                inset 0 0 8px color-mix(in srgb, var(--persona-primary) 8%, transparent);
+    border: 1px solid color-mix(in srgb, var(--persona-primary) 40%, transparent);
+    box-shadow: 0 0 12px color-mix(in srgb, var(--persona-primary) 20%, transparent);
   }
 
   .persona-bg-subtle {
-    background: color-mix(in srgb, var(--persona-primary) 10%, transparent);
+    background: color-mix(in srgb, var(--persona-primary) 08%, white);
   }
 
   .persona-bg-medium {
-    background: color-mix(in srgb, var(--persona-primary) 18%, transparent);
+    background: color-mix(in srgb, var(--persona-primary) 15%, white);
   }
 
   .persona-text {
     color: var(--persona-primary);
   }
 
-  .persona-divider {
-    background: color-mix(in srgb, var(--persona-primary) 55%, transparent);
-    box-shadow:
-      4px 0 20px color-mix(in srgb, var(--persona-primary) 30%, transparent),
-      -4px 0 20px color-mix(in srgb, var(--persona-primary) 30%, transparent);
+  /* Legacy aliases (keep so old usages don't break during migration) */
+  .glass-dark {
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    background: rgba(255, 255, 255, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.78);
   }
 
-  .shimmer-dark {
-    background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.05) 50%, transparent 100%);
-    background-size: 200% 100%;
+  .glass-darker {
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    background: rgba(255, 255, 255, 0.42);
+    border: 1px solid rgba(255, 255, 255, 0.62);
   }
 }
 
-/* ─── Dark scrollbar ─── */
+/* ─── Light scrollbar ─── */
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.10) transparent;
+  scrollbar-color: rgba(0, 0, 0, 0.14) transparent;
 }
 
 *::-webkit-scrollbar { width: 4px; }
 *::-webkit-scrollbar-track { background: transparent; }
 *::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.10);
+  background-color: rgba(0, 0, 0, 0.14);
   border-radius: 9999px;
 }
 *::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(255, 255, 255, 0.20);
+  background-color: rgba(0, 0, 0, 0.24);
 }
