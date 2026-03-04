@@ -36,23 +36,23 @@ export default function SectorChart({ data }) {
         layout="vertical"
         margin={{ top: 0, right: 44, left: 0, bottom: 0 }}
       >
-        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" horizontal={false} />
+        <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" horizontal={false} />
         <XAxis type="number" hide />
         <YAxis
           type="category"
           dataKey="name"
           width={96}
-          tick={{ fill: '#475569', fontSize: 11, fontFamily: '"Geist Mono"' }}
+          tick={{ fill: '#6e6e73', fontSize: 11, fontFamily: '"Geist Mono"' }}
         />
         <Tooltip
           formatter={(v) => `${v.toFixed(1)}%`}
           contentStyle={{
-            background: 'rgba(8,13,26,0.95)',
-            border: '1px solid rgba(255,255,255,0.10)',
+            background: 'rgba(255,255,255,0.95)',
+            border: '1px solid rgba(0,0,0,0.10)',
             borderRadius: '12px',
-            color: '#CBD5E1',
+            color: '#1c1c1e',
             fontSize: '12px',
-            fontFamily: '"Geist Mono", monospace',
+            fontFamily: '-apple-system, sans-serif',
           }}
         />
         <Bar dataKey="value" fill="var(--persona-primary)" radius={[0, 4, 4, 0]} isAnimationActive={true} animationBegin={0} animationDuration={700} animationEasing="ease-out">
@@ -60,7 +60,7 @@ export default function SectorChart({ data }) {
             dataKey="value"
             position="right"
             formatter={(v) => `${v.toFixed(1)}%`}
-            style={{ fontSize: 11, fill: '#94A3B8', fontWeight: 500 }}
+            style={{ fontSize: 11, fill: '#6e6e73', fontWeight: 500 }}
           />
         </Bar>
       </BarChart>

@@ -33,15 +33,15 @@ export default function PerformanceChart({ data = [] }) {
             <stop offset="95%" stopColor="var(--persona-primary)" stopOpacity={0} />
           </linearGradient>
         </defs>
-        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+        <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" />
         <XAxis
           dataKey="date"
-          tick={{ fill: '#475569', fontSize: 11, fontFamily: '"Geist Mono"' }}
+          tick={{ fill: '#6e6e73', fontSize: 11, fontFamily: '"Geist Mono"' }}
           tickLine={false}
           axisLine={false}
         />
         <YAxis
-          tick={{ fill: '#475569', fontSize: 11, fontFamily: '"Geist Mono"' }}
+          tick={{ fill: '#6e6e73', fontSize: 11, fontFamily: '"Geist Mono"' }}
           tickLine={false}
           tickFormatter={formatYTick}
           width={48}
@@ -50,14 +50,14 @@ export default function PerformanceChart({ data = [] }) {
         <Tooltip
           formatter={(v) => [formatTooltipValue(v), 'Value']}
           contentStyle={{
-            background: 'rgba(8,13,26,0.95)',
-            border: '1px solid rgba(255,255,255,0.10)',
+            background: 'rgba(255,255,255,0.95)',
+            border: '1px solid rgba(0,0,0,0.10)',
             borderRadius: '12px',
-            color: '#CBD5E1',
+            color: '#1c1c1e',
             fontSize: '12px',
-            fontFamily: '"Geist Mono", monospace',
+            fontFamily: '-apple-system, sans-serif',
           }}
-          labelStyle={{ marginBottom: 2, fontSize: '10px', color: '#475569' }}
+          labelStyle={{ marginBottom: 2, fontSize: '10px', color: '#6e6e73' }}
           itemStyle={{ margin: 0, padding: 0, fontSize: '11px', color: 'var(--persona-primary)' }}
         />
         <Area

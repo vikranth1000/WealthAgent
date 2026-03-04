@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 import { useAnimatedObject } from '../../hooks/useAnimatedValue'
 
-const COLORS = ['#3B82F6', '#0D9488', '#F59E0B', '#A855F7', '#F43F5E', '#06B6D4']
+const COLORS = ['#0071E3', '#34C759', '#FF9500', '#AF52DE', '#FF3B30', '#00C7BE']
 const RADIAN = Math.PI / 180
 
 function PctLabel({ cx, cy, midAngle, innerRadius, outerRadius, percent }) {
@@ -15,7 +15,7 @@ function PctLabel({ cx, cy, midAngle, innerRadius, outerRadius, percent }) {
     <text
       x={x}
       y={y}
-      fill="#94A3B8"
+      fill="#6e6e73"
       textAnchor="middle"
       dominantBaseline="central"
       fontSize={11}
@@ -85,12 +85,12 @@ export default function AllocationChart({ data }) {
             <Tooltip
               formatter={(v) => `${v.toFixed(1)}%`}
               contentStyle={{
-                background: 'rgba(8,13,26,0.95)',
-                border: '1px solid rgba(255,255,255,0.10)',
+                background: 'rgba(255,255,255,0.95)',
+                border: '1px solid rgba(0,0,0,0.10)',
                 borderRadius: '12px',
-                color: '#CBD5E1',
+                color: '#1c1c1e',
                 fontSize: '12px',
-                fontFamily: '"Geist Mono", monospace',
+                fontFamily: '-apple-system, sans-serif',
               }}
             />
           </PieChart>
@@ -105,8 +105,8 @@ export default function AllocationChart({ data }) {
               className="w-2.5 h-2.5 rounded-full shrink-0"
               style={{ backgroundColor: COLORS[i % COLORS.length] }}
             />
-            <span className="text-[11px] text-slate-400 whitespace-nowrap">{entry.name}</span>
-            <span className="text-[11px] font-medium text-slate-500 tabular-nums ml-auto">
+            <span className="text-[11px] whitespace-nowrap" style={{ color: '#6e6e73' }}>{entry.name}</span>
+            <span className="text-[11px] font-medium tabular-nums ml-auto" style={{ color: '#48484a' }}>
               {(entry.value * 100).toFixed(0)}%
             </span>
           </div>
