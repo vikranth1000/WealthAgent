@@ -7,9 +7,9 @@ export default {
         navy: '#1B2A4A',
       },
       fontFamily: {
-        sans: ['"DM Sans"', 'system-ui', 'sans-serif'],
-        display: ['Syne', 'system-ui', 'sans-serif'],
-        mono: ['"Geist Mono"', 'monospace'],
+        sans: ['-apple-system', 'BlinkMacSystemFont', '"SF Pro Display"', '"Helvetica Neue"', 'sans-serif'],
+        display: ['-apple-system', 'BlinkMacSystemFont', '"SF Pro Display"', '"Helvetica Neue"', 'sans-serif'],
+        mono: ['"SF Mono"', 'SFMono-Regular', 'ui-monospace', 'monospace'],
       },
       boxShadow: {
         glass: '0 4px 24px rgba(0,0,0,0.20)',
