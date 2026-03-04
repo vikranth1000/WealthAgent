@@ -12,7 +12,7 @@ export default function SectorChart({ data }) {
       .filter(([name, value]) => value > 0.001 && targetKeys.has(name))
       .map(([name, value]) => ({ name, value: parseFloat((value * 100).toFixed(1)) }))
       .sort((a, b) => (data[b.name] ?? 0) - (data[a.name] ?? 0))
-  }, [animated, targetKeys])
+  }, [animated, targetKeys, data])
 
   if (!data || Object.keys(data).length === 0) {
     return (

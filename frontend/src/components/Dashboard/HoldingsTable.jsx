@@ -85,7 +85,7 @@ export default function HoldingsTable({ holdings = [], enhanced = false }) {
                   color:
                     key === 'ticker'
                       ? '#FF9900'
-                      : key === 'unrealized_pnl'
+                      : key === 'unrealized_pnl' && h[key] != null
                       ? h[key] >= 0
                         ? '#00C805'
                         : '#FF3B30'
