@@ -1,5 +1,3 @@
-import { motion } from 'framer-motion'
-
 const PROMPTS = {
   conservative_retiree: [
     'How is this portfolio performing?',
@@ -27,52 +25,35 @@ const PROMPTS = {
   ],
 }
 
-const container = {
-  hidden: {},
-  show: { transition: { staggerChildren: 0.04 } },
-}
-
-const chip = {
-  hidden: { opacity: 0, scale: 0.88 },
-  show: { opacity: 1, scale: 1, transition: { type: 'spring', stiffness: 320, damping: 26 } },
-}
-
-export default function SuggestedPrompts({ persona, onSelect, compact, dynamicSuggestions }) {
-  const prompts = (dynamicSuggestions && dynamicSuggestions.length > 0)
-    ? dynamicSuggestions
-    : (PROMPTS[persona] ?? [])
+export default function SuggestedPrompts({ persona, onSelect, dynamicSuggestions }) {
+  const prompts =
+    dynamicSuggestions && dynamicSuggestions.length > 0
+      ? dynamicSuggestions
+      : PROMPTS[persona] ?? []
 
   if (!prompts.length) return null
 
-  const isDynamic = dynamicSuggestions && dynamicSuggestions.length > 0
-
   return (
-    <motion.div
-      key={prompts.join(',')}
-      variants={container}
-      initial="hidden"
-      animate="show"
-      className="flex flex-wrap gap-1.5 px-5 py-2.5 shrink-0"
-    >
+    <div className="flex flex-wrap gap-1.5 px-3 py-2 shrink-0">
       {prompts.map((prompt) => (
-        <motion.button
+        <button
           key={prompt}
-          variants={chip}
-          whileHover={{ scale: 1.04 }}
-          whileTap={{ scale: 0.96 }}
+          type="button"
           onClick={() => onSelect?.(prompt)}
-          className="rounded-full px-3 py-1.5 text-xs font-sans whitespace-nowrap transition-colors"
-          style={{
-            color: '#48484a',
-            border: isDynamic
-              ? '1px solid color-mix(in srgb, var(--persona-primary) 25%, rgba(0,0,0,0.10))'
-              : '1px solid rgba(0,0,0,0.10)',
-            background: 'rgba(255,255,255,0.70)',
+          className="text-[11px] px-2 py-1 font-mono"
+          style={{ border: '1px solid #1E1E1E', color: '#888888', background: 'transparent' }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = '#FF9900'
+            e.currentTarget.style.color = '#FF9900'
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = '#1E1E1E'
+            e.currentTarget.style.color = '#888888'
           }}
         >
           {prompt}
-        </motion.button>
+        </button>
       ))}
-    </motion.div>
+    </div>
   )
 }

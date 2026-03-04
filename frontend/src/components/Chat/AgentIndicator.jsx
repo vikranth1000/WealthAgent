@@ -1,46 +1,26 @@
-import { motion } from 'framer-motion'
+import { useState, useEffect } from 'react'
 
 const AGENT_LABELS = {
-  portfolio_analyzer: 'Analyzing portfolio',
-  market_researcher: 'Researching markets',
-  client_communicator: 'Composing response',
-  orchestrator: 'Routing query',
+  portfolio_analyzer: 'ANALYZING PORTFOLIO',
+  market_researcher: 'RESEARCHING MARKETS',
+  client_communicator: 'COMPOSING RESPONSE',
+  orchestrator: 'ROUTING QUERY',
 }
 
 export default function AgentIndicator({ agent }) {
-  const label = AGENT_LABELS[agent] ?? agent?.replace(/_/g, ' ') ?? 'Thinking'
+  const label = AGENT_LABELS[agent] ?? agent?.replace(/_/g, ' ').toUpperCase() ?? 'PROCESSING'
+  const [dots, setDots] = useState('')
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setDots((d) => (d.length >= 3 ? '' : d + '.'))
+    }, 400)
+    return () => clearInterval(interval)
+  }, [])
 
   return (
-    <motion.div
-      className="flex items-center gap-2.5 py-2"
-      initial={{ opacity: 0, y: 6 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ type: 'spring', stiffness: 300, damping: 28 }}
-    >
-      <div className="relative flex items-center gap-1">
-        {/* Glow ring */}
-        <motion.div
-          className="absolute inset-0 rounded-full blur-sm"
-          style={{ background: 'var(--persona-primary)' }}
-          animate={{ scale: [1, 1.8, 1], opacity: [0.3, 0, 0.3] }}
-          transition={{ repeat: Infinity, duration: 1.8, ease: 'easeInOut' }}
-        />
-        {[0, 1, 2].map((i) => (
-          <motion.span
-            key={i}
-            className="relative h-1.5 w-1.5 rounded-full"
-            style={{ background: 'var(--persona-primary)' }}
-            animate={{ y: [0, -5, 0] }}
-            transition={{
-              repeat: Infinity,
-              duration: 0.8,
-              delay: i * 0.15,
-              ease: 'easeInOut',
-            }}
-          />
-        ))}
-      </div>
-      <span className="text-xs font-sans" style={{ color: '#6e6e73' }}>{label}…</span>
-    </motion.div>
+    <div className="py-1 text-[11px] font-mono" style={{ color: '#FF9900' }}>
+      {label}{dots}
+    </div>
   )
 }

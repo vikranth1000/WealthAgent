@@ -85,14 +85,14 @@ export default function ChatWindow({ client, portfolioData, onGeneratingChange }
             }`}
           />
           {!isConnected && (
-            <span className="text-[11px] font-sans" style={{ color: '#6e6e73' }}>Reconnecting…</span>
+            <span className="text-[11px] font-mono" style={{ color: '#888888' }}>RECONNECTING...</span>
           )}
         </div>
         {messages.length > 0 && !isGenerating && (
           <button
             onClick={handleClearChat}
-            className="flex items-center gap-1 rounded-md px-2 py-1 text-[11px] transition-colors font-sans"
-            style={{ color: '#6e6e73' }}
+            className="flex items-center gap-1 px-2 py-1 text-[11px] transition-colors font-mono"
+            style={{ color: '#888888' }}
           >
             <Trash2 size={11} />
             Clear
@@ -103,15 +103,15 @@ export default function ChatWindow({ client, portfolioData, onGeneratingChange }
       {messages.length === 0 && !activeAction ? (
         <div className="flex-1 flex flex-col items-center justify-center px-8 text-center overflow-y-auto">
           <div
-            className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl"
-            style={{ background: 'rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.08)', boxShadow: '0 0 20px color-mix(in srgb, var(--persona-primary) 12%, transparent)' }}
+            className="mb-4 flex h-14 w-14 items-center justify-center"
+            style={{ background: '#1A1A1A', border: '1px solid #1E1E1E' }}
           >
             <MessageSquare size={22} style={{ color: 'var(--persona-primary)', opacity: 0.7 }} />
           </div>
-          <h3 className="mb-1.5 font-display text-lg font-semibold" style={{ color: '#1c1c1e' }}>
+          <h3 className="mb-1.5 font-mono text-base font-bold" style={{ color: '#FF9900' }}>
             Chat with WealthAgent
           </h3>
-          <p className="mb-6 max-w-sm text-sm leading-relaxed font-sans" style={{ color: '#6e6e73' }}>
+          <p className="mb-6 max-w-sm text-[12px] leading-relaxed font-mono" style={{ color: '#888888' }}>
             Ask anything about {client?.name ?? 'your client'}&apos;s portfolio, performance, or
             market conditions.
           </p>
@@ -120,8 +120,8 @@ export default function ChatWindow({ client, portfolioData, onGeneratingChange }
       ) : (
         /* Chat area */
         <div className="flex-1 relative min-h-0">
-          <div className="h-full overflow-y-auto">
-            <div className="px-5 py-4">
+          <div className="h-full overflow-y-auto" style={{ background: '#0D0D0D' }}>
+            <div className="px-4 py-3">
               <AnimatePresence initial={false}>
                 {messages.map((msg, i) => (
                   <MessageBubble
@@ -154,7 +154,7 @@ export default function ChatWindow({ client, portfolioData, onGeneratingChange }
       )}
 
       {/* Input area */}
-      <div className="shrink-0" style={{ borderTop: '1px solid rgba(0,0,0,0.06)', background: 'rgba(255,255,255,0.60)' }}>
+      <div className="shrink-0" style={{ borderTop: '1px solid #1E1E1E', background: '#0D0D0D' }}>
         {messages.length > 0 && !isGenerating && (
           <SuggestedPrompts
             persona={client?.persona}
@@ -170,10 +170,10 @@ export default function ChatWindow({ client, portfolioData, onGeneratingChange }
               <button
                 onClick={() => setActionsOpen((o) => !o)}
                 disabled={isGenerating}
-                className={`flex h-10 items-center gap-1.5 rounded-xl px-3 text-xs font-semibold transition-all font-sans ${isGenerating ? 'cursor-not-allowed opacity-30' : ''}`}
+                className={`flex h-10 items-center gap-1.5 px-3 text-[11px] font-mono transition-all ${isGenerating ? 'cursor-not-allowed opacity-30' : ''}`}
                 style={actionsOpen
-                  ? { border: '1px solid rgba(0,0,0,0.15)', background: 'rgba(255,255,255,0.80)', color: '#1c1c1e' }
-                  : { border: '1px solid rgba(0,0,0,0.10)', background: 'rgba(255,255,255,0.60)', color: '#6e6e73' }}
+                  ? { border: '1px solid #FF9900', background: 'transparent', color: '#FF9900' }
+                  : { border: '1px solid #1E1E1E', background: 'transparent', color: '#888888' }}
                 title="AI Actions"
               >
                 <Zap size={14} />
@@ -182,10 +182,12 @@ export default function ChatWindow({ client, portfolioData, onGeneratingChange }
 
               {/* Popover menu */}
               {actionsOpen && (
-                <div className="absolute bottom-full left-0 mb-2 w-64 rounded-2xl overflow-hidden z-50 animate-slide-up" style={{ border: '1px solid rgba(0,0,0,0.10)', background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', boxShadow: '0 8px 32px rgba(0,0,0,0.10)' }}>
-                  <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1px solid rgba(0,0,0,0.08)' }}>
-                    <span className="text-[10px] font-bold uppercase tracking-widest font-sans" style={{ color: '#6e6e73' }}>AI Actions</span>
-                    <button onClick={() => setActionsOpen(false)} className="transition-colors" style={{ color: '#6e6e73' }}>
+                <div className="absolute bottom-full left-0 mb-2 w-64 overflow-hidden z-50 animate-slide-up" style={{ border: '1px solid #FF9900', background: '#111111' }}>
+                  <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1px solid #1E1E1E' }}>
+                    <span className="text-[10px] font-bold uppercase tracking-widest font-mono" style={{ color: '#FF9900' }}>AI ACTIONS</span>
+                    <button onClick={() => setActionsOpen(false)} className="font-mono text-[11px] transition-colors" style={{ color: '#888888' }}
+                      onMouseEnter={(e) => (e.currentTarget.style.color = '#FF9900')}
+                      onMouseLeave={(e) => (e.currentTarget.style.color = '#888888')}>
                       <X size={12} />
                     </button>
                   </div>
@@ -194,15 +196,17 @@ export default function ChatWindow({ client, portfolioData, onGeneratingChange }
                       <button
                         key={id}
                         onClick={() => handleAction(id)}
-                        className="flex items-center gap-3 w-full px-4 py-2.5 text-left hover:bg-black/[0.04] transition-colors group"
+                        className="flex items-center gap-3 w-full px-4 py-2.5 text-left transition-colors"
+                        onMouseEnter={(e) => (e.currentTarget.style.background = '#1A1A1A')}
+                        onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                       >
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors"
-                          style={{ background: 'rgba(0,0,0,0.05)', color: 'var(--persona-primary)' }}>
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center"
+                          style={{ background: '#1A1A1A', border: '1px solid #1E1E1E', color: '#FF9900' }}>
                           <Icon size={14} />
                         </div>
                         <div className="min-w-0">
-                          <p className="text-sm font-medium font-sans" style={{ color: '#1c1c1e' }}>{label}</p>
-                          <p className="text-[11px] leading-tight font-sans" style={{ color: '#6e6e73' }}>{desc}</p>
+                          <p className="text-[12px] font-mono" style={{ color: '#FFFFFF' }}>{label}</p>
+                          <p className="text-[10px] font-mono leading-tight" style={{ color: '#888888' }}>{desc}</p>
                         </div>
                       </button>
                     ))}

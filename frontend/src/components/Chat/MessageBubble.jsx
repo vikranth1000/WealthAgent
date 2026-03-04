@@ -1,5 +1,4 @@
 import { cloneElement } from 'react'
-import { motion } from 'framer-motion'
 import { parseBlocks } from './blockParser'
 import { BLOCK_COMPONENTS, BlockSkeleton } from './blocks'
 
@@ -188,8 +187,6 @@ function renderContent(content, isStreaming) {
   return elements
 }
 
-const bubbleSpring = { type: 'spring', stiffness: 300, damping: 30 }
-
 export default function MessageBubble({ role, content, streaming, error }) {
   const isUser = role === 'user'
 
@@ -198,74 +195,38 @@ export default function MessageBubble({ role, content, streaming, error }) {
 
   if (isUser) {
     return (
-      <motion.div
-        className="flex justify-end mb-3"
-        initial={{ opacity: 0, x: 12 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={bubbleSpring}
-      >
+      <div className="flex justify-end mb-3">
         <div
-          className="max-w-[68%] rounded-2xl rounded-br-sm px-4 py-2.5 text-[13px] font-sans leading-relaxed text-white"
-          style={{ background: 'var(--persona-primary)' }}
+          className="max-w-[68%] text-[13px] font-mono leading-relaxed"
+          style={{ color: '#FF9900' }}
         >
-          {content}
+          {'> '}{content}
         </div>
-      </motion.div>
+      </div>
     )
   }
 
   if (error) {
     return (
-      <motion.div
-        className="flex justify-start mb-4"
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={bubbleSpring}
-      >
+      <div className="flex justify-start mb-4">
         <div
-          className="max-w-[78%] rounded-2xl rounded-bl-sm px-4 py-3 text-[13px] font-sans"
-          style={{
-            color: '#FF3B30',
-            border: '1px solid rgba(255,59,48,0.20)',
-            background: 'rgba(255,59,48,0.06)',
-          }}
+          className="max-w-[78%] px-3 py-2 text-[13px] font-mono"
+          style={{ color: '#FF3B30' }}
         >
-          {rendered}
+          ERROR: {rendered}
         </div>
-      </motion.div>
+      </div>
     )
   }
 
   return (
-    <motion.div
-      className="flex justify-start mb-4"
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={bubbleSpring}
-    >
-      <div className="relative max-w-[78%] flex">
-        {/* Left accent border */}
-        <motion.div
-          className="w-[3px] rounded-full shrink-0 mr-3 self-stretch"
-          style={{
-            background: 'color-mix(in srgb, var(--persona-primary) 50%, transparent)',
-            originY: 0,
-          }}
-          initial={{ scaleY: 0 }}
-          animate={{ scaleY: 1 }}
-          transition={{ duration: 0.35, ease: 'easeOut', delay: 0.05 }}
-        />
-        <div
-          className="rounded-2xl rounded-bl-sm px-4 py-3 text-[13px] font-sans leading-relaxed"
-          style={{
-            background: 'rgba(255,255,255,0.80)',
-            border: '1px solid rgba(0,0,0,0.08)',
-            color: '#48484a',
-          }}
-        >
-          {rendered}
-        </div>
+    <div className="flex justify-start mb-4">
+      <div
+        className="max-w-[78%] pl-3 py-2 text-[13px] font-mono leading-relaxed"
+        style={{ borderLeft: '2px solid #FF9900', color: '#FFFFFF' }}
+      >
+        {rendered}
       </div>
-    </motion.div>
+    </div>
   )
 }
