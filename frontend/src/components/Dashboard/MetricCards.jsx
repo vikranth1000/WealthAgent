@@ -12,19 +12,19 @@ const CARDS = [
     key: 'ytdReturn',
     label: 'YTD Return',
     format: { style: 'percent', signDisplay: 'always', maximumFractionDigits: 1 },
-    color: (v) => (v >= 0 ? '#34D399' : '#F87171'),
+    color: (v) => (v >= 0 ? '#34C759' : '#FF3B30'),
   },
   {
     key: 'sharpe',
     label: 'Sharpe Ratio',
     format: { minimumFractionDigits: 2, maximumFractionDigits: 2 },
-    color: () => '#94A3B8',
+    color: () => '#48484a',
   },
   {
     key: 'maxDrawdown',
     label: 'Max Drawdown',
     format: { style: 'percent', maximumFractionDigits: 1 },
-    color: () => '#F87171',
+    color: () => '#FF3B30',
   },
 ]
 
@@ -43,19 +43,19 @@ export default function MetricCards({ metrics = {} }) {
             transition={{ type: 'spring', stiffness: 280, damping: 28, delay: i * 0.06 }}
             whileHover={{ y: -2 }}
           >
-            <div className="magic-card-inner px-3 py-3">
-              <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-slate-700 font-sans mb-2">
-                {label}
-              </p>
+            <div className="magic-card-inner px-4 py-3 h-full">
+              <p className="apple-label mb-2">{label}</p>
               {value != null ? (
                 <NumberFlow
                   value={value}
                   format={format}
-                  className="font-mono text-[22px] font-semibold leading-none"
-                  style={{ color: color(value) }}
+                  className="font-semibold leading-none"
+                  style={{ fontSize: '22px', color: color(value) }}
                 />
               ) : (
-                <span className="font-mono text-[22px] font-semibold text-slate-700">—</span>
+                <span className="font-semibold leading-none" style={{ fontSize: '22px', color: '#c7c7cc' }}>
+                  —
+                </span>
               )}
             </div>
           </motion.div>
