@@ -1,3 +1,4 @@
+import NumberFlow from '@number-flow/react'
 import MetricCards from '../Dashboard/MetricCards.jsx'
 import AllocationChart from '../Dashboard/AllocationChart.jsx'
 import PerformanceChart from '../Dashboard/PerformanceChart.jsx'
@@ -81,15 +82,17 @@ export default function RightPanel({ client, portfolioData }) {
               )}
             </div>
             {analysis && (
-              <p
-                className="font-mono text-3xl font-semibold mt-3 transition-all duration-700"
-                style={{ color: 'var(--persona-primary)' }}
-              >
-                $
-                {analysis.total_value?.toLocaleString('en-US', {
-                  maximumFractionDigits: 0,
-                })}
-              </p>
+              <NumberFlow
+                value={analysis.total_value ?? 0}
+                format={{ style: 'currency', currency: 'USD', maximumFractionDigits: 0 }}
+                className="font-mono font-semibold mt-3 block"
+                style={{
+                  fontSize: '2.25rem',
+                  lineHeight: 1,
+                  color: 'var(--persona-primary)',
+                  filter: 'drop-shadow(0 0 20px color-mix(in srgb, var(--persona-primary) 40%, transparent))',
+                }}
+              />
             )}
           </div>
         ) : (
