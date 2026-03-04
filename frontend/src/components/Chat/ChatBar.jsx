@@ -1,111 +1,64 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { MessageCircle, ArrowUp, X } from 'lucide-react'
+import { Zap } from 'lucide-react'
 import ChatWindow from './ChatWindow.jsx'
 
 export default function ChatBar({ client, portfolioData }) {
   const [open, setOpen] = useState(false)
 
+  useEffect(() => {
+    function onKeydown(e) {
+      if (e.key === 'Escape' && open) setOpen(false)
+    }
+    window.addEventListener('keydown', onKeydown)
+    return () => window.removeEventListener('keydown', onKeydown)
+  }, [open])
+
   const placeholder = client
-    ? `Ask AI about ${client.name.split(' ')[0]}'s portfolio…`
-    : 'Ask AI about this portfolio…'
+    ? `Ask about ${client.name.split(' ')[0]}'s portfolio...`
+    : 'Select a client to begin...'
 
   return (
     <>
-      {/* Backdrop */}
+      {/* 2D flat chat panel — slides up from console bar */}
       <AnimatePresence>
         {open && (
           <motion.div
-            className="fixed inset-0 z-40"
-            style={{ background: 'rgba(0,0,0,0.12)', backdropFilter: 'blur(2px)', WebkitBackdropFilter: 'blur(2px)' }}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            onClick={() => setOpen(false)}
-          />
-        )}
-      </AnimatePresence>
-
-      {/* Pill */}
-      <AnimatePresence>
-        {!open && (
-          <motion.div
-            key="pill"
-            className="fixed bottom-6 left-6 right-6 z-50 flex items-center gap-3 px-5 cursor-pointer select-none"
+            key="terminal-chat"
+            className="fixed left-0 right-0 z-50 flex flex-col"
             style={{
-              height: '60px',
-              borderRadius: '999px',
-              background: 'rgba(255,255,255,0.82)',
-              backdropFilter: 'blur(24px)',
-              WebkitBackdropFilter: 'blur(24px)',
-              border: '1px solid rgba(255,255,255,0.92)',
-              boxShadow: '0 8px 32px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.06)',
+              bottom: '42px',
+              height: '60vh',
+              background: '#111111',
+              borderTop: '1px solid #FF9900',
+              borderLeft: '1px solid #FF9900',
+              borderRight: '1px solid #FF9900',
             }}
-            onClick={() => setOpen(true)}
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 8 }}
-            transition={{ type: 'spring', stiffness: 280, damping: 28, delay: 0.35 }}
-            whileHover={{ boxShadow: '0 12px 40px rgba(0,0,0,0.13), 0 2px 8px rgba(0,0,0,0.07)' }}
+            initial={{ y: '100%' }}
+            animate={{ y: 0 }}
+            exit={{ y: '100%' }}
+            transition={{ type: 'tween', duration: 0.15, ease: 'easeOut' }}
           >
-            <MessageCircle size={16} style={{ color: '#6e6e73', flexShrink: 0 }} />
-            <span className="flex-1 text-[14px]" style={{ color: '#6e6e73' }}>
-              {placeholder}
-            </span>
-            <motion.button
-              className="flex h-9 w-9 items-center justify-center rounded-full shrink-0"
-              style={{ background: 'var(--persona-primary)' }}
-              whileHover={{ scale: 1.06 }}
-              whileTap={{ scale: 0.94 }}
-              onClick={(e) => { e.stopPropagation(); setOpen(true) }}
-            >
-              <ArrowUp size={15} color="white" />
-            </motion.button>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Expanded sheet */}
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            key="sheet"
-            className="fixed bottom-6 left-6 right-6 z-50 flex flex-col overflow-hidden"
-            style={{
-              height: '70vh',
-              borderRadius: '24px',
-              background: 'rgba(255,255,255,0.82)',
-              backdropFilter: 'blur(32px)',
-              WebkitBackdropFilter: 'blur(32px)',
-              border: '1px solid rgba(255,255,255,0.92)',
-              boxShadow: '0 20px 60px rgba(0,0,0,0.14), 0 4px 16px rgba(0,0,0,0.08)',
-            }}
-            initial={{ opacity: 0, y: 24, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 16, scale: 0.98 }}
-            transition={{ type: 'spring', stiffness: 340, damping: 32 }}
-          >
-            {/* Sheet header */}
+            {/* Panel header */}
             <div
-              className="flex items-center justify-between px-5 pt-4 pb-3 shrink-0 border-b"
-              style={{ borderColor: 'rgba(0,0,0,0.06)' }}
+              className="shrink-0 flex items-center justify-between px-4"
+              style={{ height: '32px', borderBottom: '1px solid #1E1E1E' }}
             >
-              <div className="flex items-center gap-2">
-                <MessageCircle size={14} style={{ color: 'var(--persona-primary)' }} />
-                <span className="text-[13px] font-semibold" style={{ color: '#1c1c1e' }}>
-                  {client ? `AI Assistant — ${client.name.split(' ')[0]}` : 'AI Assistant'}
-                </span>
-              </div>
-              <motion.button
-                className="flex h-7 w-7 items-center justify-center rounded-full transition-colors"
-                style={{ background: 'rgba(0,0,0,0.06)' }}
-                whileHover={{ background: 'rgba(0,0,0,0.10)' }}
-                whileTap={{ scale: 0.92 }}
-                onClick={() => setOpen(false)}
+              <span
+                className="text-[10px] font-bold uppercase tracking-[0.12em]"
+                style={{ color: '#FF9900' }}
               >
-                <X size={13} style={{ color: '#6e6e73' }} />
-              </motion.button>
+                AI CONSOLE{client ? ` — ${client.name.split(' ')[0].toUpperCase()}` : ''}
+              </span>
+              <button
+                onClick={() => setOpen(false)}
+                className="text-[11px] font-mono transition-colors"
+                style={{ color: '#888888' }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = '#FF9900')}
+                onMouseLeave={(e) => (e.currentTarget.style.color = '#888888')}
+              >
+                [X]
+              </button>
             </div>
 
             {/* Chat window */}
@@ -118,16 +71,71 @@ export default function ChatBar({ client, portfolioData }) {
                 />
               ) : (
                 <div
-                  className="flex h-full items-center justify-center text-[13px]"
-                  style={{ color: '#6e6e73' }}
+                  className="flex h-full items-center justify-center text-[11px] font-mono"
+                  style={{ color: '#444444' }}
                 >
-                  Select a client to begin
+                  NO CLIENT SELECTED
                 </div>
               )}
             </div>
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Console bar — always visible */}
+      <div
+        className="shrink-0 flex items-center gap-3 px-4 relative z-50"
+        style={{
+          height: '42px',
+          background: '#111111',
+          borderTop: `1px solid ${open ? '#FF9900' : '#1E1E1E'}`,
+        }}
+      >
+        {/* Connection dot */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          <span
+            className="h-1.5 w-1.5 rounded-full shrink-0"
+            style={{ background: '#00C805' }}
+          />
+          <span className="text-[10px] font-mono" style={{ color: '#444444' }}>
+            READY
+          </span>
+        </div>
+
+        {/* Prompt */}
+        <span className="text-[13px] shrink-0 font-mono" style={{ color: '#FF9900' }}>
+          {'>'}
+        </span>
+
+        {/* Input trigger */}
+        <input
+          type="text"
+          readOnly
+          placeholder={placeholder}
+          className="flex-1 bg-transparent outline-none text-[13px] font-mono cursor-pointer"
+          style={{ color: '#444444' }}
+          onClick={() => setOpen(true)}
+          onFocus={() => setOpen(true)}
+        />
+
+        {/* Actions button */}
+        <button
+          onClick={() => setOpen((o) => !o)}
+          className="shrink-0 flex items-center gap-1.5 px-2 py-1 text-[11px] font-mono transition-colors"
+          style={{ border: '1px solid #1E1E1E', color: '#888888', background: 'transparent' }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = '#FF9900'
+            e.currentTarget.style.color = '#FF9900'
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = '#1E1E1E'
+            e.currentTarget.style.color = '#888888'
+          }}
+        >
+          <Zap size={10} />
+          CHAT
+        </button>
+      </div>
     </>
   )
 }
