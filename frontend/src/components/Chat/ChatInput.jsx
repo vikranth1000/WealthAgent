@@ -18,7 +18,6 @@ export default function ChatInput({ value, onChange, onSubmit, onStop, disabled,
 
   return (
     <div className="flex items-center gap-2">
-      {/* Magic border wrapper activates on focus */}
       <div className={`flex-1 magic-card ${focused ? 'magic-card--active' : ''}`}>
         <input
           type="text"
@@ -28,8 +27,9 @@ export default function ChatInput({ value, onChange, onSubmit, onStop, disabled,
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
           disabled={disabled && !isGenerating}
-          placeholder={placeholder ?? 'Ask WealthAgent\u2026'}
-          className="magic-card-inner w-full h-11 px-4 text-sm text-slate-200 placeholder-slate-600 outline-none font-sans bg-transparent"
+          placeholder={placeholder ?? 'Ask WealthAgent…'}
+          className="magic-card-inner w-full h-11 px-4 text-[13px] outline-none font-sans bg-transparent"
+          style={{ color: '#1c1c1e' }}
         />
       </div>
 
@@ -37,7 +37,12 @@ export default function ChatInput({ value, onChange, onSubmit, onStop, disabled,
         <motion.button
           onClick={onStop}
           whileTap={{ scale: 0.92 }}
-          className="h-11 w-11 shrink-0 rounded-xl flex items-center justify-center border border-rose-500/40 bg-rose-500/[0.10] text-rose-400 hover:bg-rose-500/[0.16] transition-all"
+          className="h-11 w-11 shrink-0 rounded-xl flex items-center justify-center transition-all"
+          style={{
+            border: '1px solid rgba(255,59,48,0.30)',
+            background: 'rgba(255,59,48,0.08)',
+            color: '#FF3B30',
+          }}
           title="Stop generating"
         >
           <Square size={14} className="fill-current" />
@@ -51,7 +56,9 @@ export default function ChatInput({ value, onChange, onSubmit, onStop, disabled,
           className="h-11 w-11 shrink-0 rounded-xl flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed transition-all"
           style={{
             background: 'var(--persona-primary)',
-            boxShadow: value?.trim() ? '0 0 18px color-mix(in srgb, var(--persona-primary) 50%, transparent)' : 'none',
+            boxShadow: value?.trim()
+              ? '0 0 16px color-mix(in srgb, var(--persona-primary) 40%, transparent)'
+              : 'none',
           }}
           title="Send message"
         >

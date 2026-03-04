@@ -40,7 +40,7 @@ export default function AgentIndicator({ agent }) {
           />
         ))}
       </div>
-      <span className="text-xs text-slate-500 font-sans">{label}…</span>
+      <span className="text-xs font-sans" style={{ color: '#6e6e73' }}>{label}…</span>
     </motion.div>
   )
 }

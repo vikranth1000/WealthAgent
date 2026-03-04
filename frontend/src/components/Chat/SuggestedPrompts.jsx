@@ -61,8 +61,14 @@ export default function SuggestedPrompts({ persona, onSelect, compact, dynamicSu
           whileHover={{ scale: 1.04 }}
           whileTap={{ scale: 0.96 }}
           onClick={() => onSelect?.(prompt)}
-          className="rounded-full border border-white/[0.10] bg-transparent px-3 py-1.5 text-xs text-slate-500 transition-colors hover:text-slate-300 hover:border-white/[0.22] hover:bg-white/[0.04] font-sans whitespace-nowrap"
-          style={isDynamic ? { borderColor: 'color-mix(in srgb, var(--persona-primary) 25%, rgba(255,255,255,0.10))' } : {}}
+          className="rounded-full px-3 py-1.5 text-xs font-sans whitespace-nowrap transition-colors"
+          style={{
+            color: '#48484a',
+            border: isDynamic
+              ? '1px solid color-mix(in srgb, var(--persona-primary) 25%, rgba(0,0,0,0.10))'
+              : '1px solid rgba(0,0,0,0.10)',
+            background: 'rgba(255,255,255,0.70)',
+          }}
         >
           {prompt}
         </motion.button>
