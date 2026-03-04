@@ -1,155 +1,42 @@
-/* Tailwind directives */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* ─── Animatable custom properties ─── */
-
-@property --persona-primary {
-  syntax: '<color>';
-  inherits: true;
-  initial-value: #0071E3;
-}
-
-@property --angle {
-  syntax: '<angle>';
-  inherits: false;
-  initial-value: 0deg;
-}
-
-/* ─── Global base ─── */
-
-html, body {
-  background: #f0f4ff;
-}
+/* ─── Terminal design tokens ─── */
 
 :root {
-  --persona-primary: #0071E3;
-  transition: --persona-primary 1.2s ease;
+  --persona-primary: #FF9900;
+  --bg: #0D0D0D;
+  --panel: #111111;
+  --border: #1E1E1E;
+  --amber: #FF9900;
+  --text-primary: #FFFFFF;
+  --text-secondary: #888888;
+  --green: #00C805;
+  --red: #FF3B30;
 }
 
-/* ─── Magic border (conic-gradient sweep — works in light mode at reduced opacity) ─── */
-
-@keyframes spin-angle {
-  to { --angle: 360deg; }
+html, body {
+  background: #0D0D0D;
+  color: #FFFFFF;
+  height: 100vh;
+  overflow: hidden;
+  font-family: 'SF Mono', SFMono-Regular, 'Courier New', Courier, monospace;
 }
 
-.magic-card {
-  position: relative;
-  padding: 1px;
-  border-radius: 16px;
-}
-
-.magic-card::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: 16px;
-  background: conic-gradient(
-    from var(--angle),
-    transparent 0%,
-    color-mix(in srgb, var(--persona-primary) 90%, transparent) 8%,
-    transparent 16%
-  );
-  animation: spin-angle 3s linear infinite;
-  opacity: 0;
-  transition: opacity 0.35s ease;
-  z-index: 0;
-}
-
-.magic-card:hover::before,
-.magic-card--active::before {
-  opacity: 0.55;
-}
-
-.magic-card-inner {
-  position: relative;
-  z-index: 1;
-  border-radius: 15px;
-  background: rgba(255, 255, 255, 0.92);
-}
-
-/* ─── Apple-style utilities ─── */
-
-@layer utilities {
-  /* Primary glass — hero card, metric cards */
-  .apple-glass-primary {
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
-    background: rgba(255, 255, 255, 0.72);
-    border: 1px solid rgba(255, 255, 255, 0.88);
-    box-shadow: 0 2px 20px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.04);
-  }
-
-  /* Secondary glass — chart containers, top bar, holdings */
-  .apple-glass-secondary {
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    background: rgba(255, 255, 255, 0.55);
-    border: 1px solid rgba(255, 255, 255, 0.78);
-    box-shadow: 0 1px 12px rgba(0, 0, 0, 0.04);
-  }
-
-  /* Apple label style — 11px uppercase section titles */
-  .apple-label {
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: #6e6e73;
-  }
-
-  /* Persona utilities — updated for light mode */
-  .persona-border {
-    border: 1px solid color-mix(in srgb, var(--persona-primary) 25%, transparent);
-  }
-
-  .persona-border-glow {
-    border: 1px solid color-mix(in srgb, var(--persona-primary) 40%, transparent);
-    box-shadow: 0 0 12px color-mix(in srgb, var(--persona-primary) 20%, transparent);
-  }
-
-  .persona-bg-subtle {
-    background: color-mix(in srgb, var(--persona-primary) 08%, white);
-  }
-
-  .persona-bg-medium {
-    background: color-mix(in srgb, var(--persona-primary) 15%, white);
-  }
-
-  .persona-text {
-    color: var(--persona-primary);
-  }
-
-  /* Legacy aliases (keep so old usages don't break during migration) */
-  .glass-dark {
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    background: rgba(255, 255, 255, 0.55);
-    border: 1px solid rgba(255, 255, 255, 0.78);
-  }
-
-  .glass-darker {
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    background: rgba(255, 255, 255, 0.42);
-    border: 1px solid rgba(255, 255, 255, 0.62);
-  }
-}
-
-/* ─── Light scrollbar ─── */
+/* ─── Terminal scrollbar ─── */
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(0, 0, 0, 0.14) transparent;
+  scrollbar-color: #333333 transparent;
 }
 
 *::-webkit-scrollbar { width: 4px; }
 *::-webkit-scrollbar-track { background: transparent; }
 *::-webkit-scrollbar-thumb {
-  background-color: rgba(0, 0, 0, 0.14);
-  border-radius: 9999px;
+  background-color: #333333;
+  border-radius: 0;
 }
 *::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(0, 0, 0, 0.24);
+  background-color: #555555;
 }
