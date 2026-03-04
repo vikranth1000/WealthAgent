@@ -1,65 +1,66 @@
-import { useAnimatedValue } from '../../hooks/useAnimatedValue'
+import { motion } from 'framer-motion'
+import NumberFlow from '@number-flow/react'
 
-function formatValue(key, value) {
-  if (value == null) return '\u2014'
-  switch (key) {
-    case 'totalValue':
-      return `$${Math.round(value).toLocaleString()}`
-    case 'ytdReturn': {
-      const pct = (value * 100).toFixed(1)
-      return `${value >= 0 ? '+' : ''}${pct}%`
-    }
-    case 'sharpe':
-      return value.toFixed(2)
-    case 'maxDrawdown':
-      return `${(value * 100).toFixed(1)}%`
-    default:
-      return String(value)
-  }
-}
-
-function valueStyle(key, value) {
-  if (key === 'totalValue') return { color: 'var(--persona-primary)' }
-  if (key === 'ytdReturn') return { color: value >= 0 ? '#34D399' : '#F87171' }
-  if (key === 'sharpe') return { color: '#94A3B8' }
-  if (key === 'maxDrawdown') return { color: '#F87171' }
-  return {}
-}
-
-function AnimatedCard({ label, rawValue, formatKey }) {
-  const animated = useAnimatedValue(rawValue)
-
-  return (
-    <div className="rounded-xl bg-white/[0.05] border border-white/[0.08] px-3 py-2.5">
-      <p className="text-[10px] font-bold uppercase tracking-widest text-slate-700 font-sans mb-1.5">{label}</p>
-      <p
-        className="font-mono text-base font-semibold transition-all duration-700"
-        style={valueStyle(formatKey, rawValue)}
-      >
-        {formatValue(formatKey, rawValue != null ? animated : null)}
-      </p>
-    </div>
-  )
-}
+const CARDS = [
+  {
+    key: 'totalValue',
+    label: 'Total Value',
+    format: { style: 'currency', currency: 'USD', maximumFractionDigits: 0 },
+    color: () => 'var(--persona-primary)',
+  },
+  {
+    key: 'ytdReturn',
+    label: 'YTD Return',
+    format: { style: 'percent', signDisplay: 'always', maximumFractionDigits: 1 },
+    color: (v) => (v >= 0 ? '#34D399' : '#F87171'),
+  },
+  {
+    key: 'sharpe',
+    label: 'Sharpe Ratio',
+    format: { minimumFractionDigits: 2, maximumFractionDigits: 2 },
+    color: () => '#94A3B8',
+  },
+  {
+    key: 'maxDrawdown',
+    label: 'Max Drawdown',
+    format: { style: 'percent', maximumFractionDigits: 1 },
+    color: () => '#F87171',
+  },
+]
 
 export default function MetricCards({ metrics = {} }) {
-  const cards = [
-    { key: 'totalValue', label: 'Total Value' },
-    { key: 'ytdReturn', label: 'YTD Return' },
-    { key: 'sharpe', label: 'Sharpe Ratio' },
-    { key: 'maxDrawdown', label: 'Max Drawdown' },
-  ]
-
   return (
     <div className="grid grid-cols-2 gap-2">
-      {cards.map(({ key, label }) => (
-        <AnimatedCard
-          key={key}
-          label={label}
-          rawValue={metrics[key] ?? null}
-          formatKey={key}
-        />
-      ))}
+      {CARDS.map(({ key, label, format, color }, i) => {
+        const value = metrics[key] ?? null
+
+        return (
+          <motion.div
+            key={key}
+            className="magic-card"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ type: 'spring', stiffness: 280, damping: 28, delay: i * 0.06 }}
+            whileHover={{ y: -2 }}
+          >
+            <div className="magic-card-inner px-3 py-3">
+              <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-slate-700 font-sans mb-2">
+                {label}
+              </p>
+              {value != null ? (
+                <NumberFlow
+                  value={value}
+                  format={format}
+                  className="font-mono text-[22px] font-semibold leading-none"
+                  style={{ color: color(value) }}
+                />
+              ) : (
+                <span className="font-mono text-[22px] font-semibold text-slate-700">—</span>
+              )}
+            </div>
+          </motion.div>
+        )
+      })}
     </div>
   )
 }
