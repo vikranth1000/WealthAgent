@@ -194,7 +194,7 @@ export default function ChatWindow({ client, portfolioData, onGeneratingChange }
                       <button
                         key={id}
                         onClick={() => handleAction(id)}
-                        className="flex items-center gap-3 w-full px-4 py-2.5 text-left hover:bg-white/[0.04] transition-colors group"
+                        className="flex items-center gap-3 w-full px-4 py-2.5 text-left hover:bg-black/[0.04] transition-colors group"
                       >
                         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors"
                           style={{ background: 'rgba(0,0,0,0.05)', color: 'var(--persona-primary)' }}>
