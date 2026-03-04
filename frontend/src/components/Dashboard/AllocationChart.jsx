@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 import { useAnimatedObject } from '../../hooks/useAnimatedValue'
 
-const COLORS = ['#1B2A4A', '#0D9488', '#F59E0B', '#7C3AED', '#3B82F6', '#EF4444']
+const COLORS = ['#3B82F6', '#0D9488', '#F59E0B', '#A855F7', '#F43F5E', '#06B6D4']
 const RADIAN = Math.PI / 180
 
 function PctLabel({ cx, cy, midAngle, innerRadius, outerRadius, percent }) {
@@ -73,7 +73,10 @@ export default function AllocationChart({ data }) {
               label={PctLabel}
               strokeWidth={2}
               stroke="rgba(255,255,255,0.08)"
-              isAnimationActive={false}
+              isAnimationActive={true}
+              animationBegin={0}
+              animationDuration={700}
+              animationEasing="ease-out"
             >
               {chartData.map((_, i) => (
                 <Cell key={i} fill={COLORS[i % COLORS.length]} />

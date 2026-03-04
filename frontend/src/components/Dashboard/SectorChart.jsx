@@ -55,7 +55,7 @@ export default function SectorChart({ data }) {
             fontFamily: '"Geist Mono", monospace',
           }}
         />
-        <Bar dataKey="value" fill="var(--persona-primary)" radius={[0, 4, 4, 0]} isAnimationActive={false}>
+        <Bar dataKey="value" fill="var(--persona-primary)" radius={[0, 4, 4, 0]} isAnimationActive={true} animationBegin={0} animationDuration={700} animationEasing="ease-out">
           <LabelList
             dataKey="value"
             position="right"

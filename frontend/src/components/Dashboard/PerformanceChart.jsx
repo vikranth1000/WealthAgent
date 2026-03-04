@@ -67,6 +67,10 @@ export default function PerformanceChart({ data = [] }) {
           strokeWidth={2}
           fill="url(#perfGradient)"
           dot={false}
+          isAnimationActive={true}
+          animationBegin={0}
+          animationDuration={800}
+          animationEasing="ease-out"
         />
         {lastPoint && (
           <ReferenceDot
