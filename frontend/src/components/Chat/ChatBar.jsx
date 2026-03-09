@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Zap } from 'lucide-react'
+import { MessageSquare, X, Command } from 'lucide-react'
 import ChatWindow from './ChatWindow.jsx'
 
 export default function ChatBar({ client, portfolioData }) {
@@ -9,60 +9,77 @@ export default function ChatBar({ client, portfolioData }) {
   useEffect(() => {
     function onKeydown(e) {
       if (e.key === 'Escape' && open) setOpen(false)
+      if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault()
+        setOpen((o) => !o)
+      }
     }
     window.addEventListener('keydown', onKeydown)
     return () => window.removeEventListener('keydown', onKeydown)
   }, [open])
 
   const placeholder = client
-    ? `Ask about ${client.name.split(' ')[0]}'s portfolio...`
+    ? `Ask WealthAgent about ${client.name.split(' ')[0]}...`
     : 'Select a client to begin...'
 
   return (
     <>
-      {/* 2D flat chat panel — slides up from console bar */}
+      {/* Dimmed backdrop when chat is open */}
       <AnimatePresence>
         {open && (
           <motion.div
-            key="terminal-chat"
-            className="fixed left-0 right-0 z-50 flex flex-col"
+            className="fixed inset-0 bg-background/40 backdrop-blur-sm z-40"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setOpen(false)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Floating Chat Modal */}
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            className="fixed z-50 flex flex-col glass-card border-primary/20 bg-background/80 shadow-[0_20px_60px_-15px_rgba(16,185,129,0.2)]"
             style={{
-              bottom: '42px',
-              height: '60vh',
-              background: '#111111',
-              borderTop: '1px solid #FF9900',
-              borderLeft: '1px solid #FF9900',
-              borderRight: '1px solid #FF9900',
+              bottom: '90px',
+              left: '50%',
+              width: '800px',
+              maxWidth: '90vw',
+              height: '65vh',
+              x: '-50%'
             }}
-            initial={{ y: '100%' }}
-            animate={{ y: 0 }}
-            exit={{ y: '100%' }}
-            transition={{ type: 'tween', duration: 0.15, ease: 'easeOut' }}
+            initial={{ y: 20, opacity: 0, scale: 0.95 }}
+            animate={{ y: 0, opacity: 1, scale: 1 }}
+            exit={{ y: 20, opacity: 0, scale: 0.95 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
           >
-            {/* Panel header */}
-            <div
-              className="shrink-0 flex items-center justify-between px-4"
-              style={{ height: '32px', borderBottom: '1px solid #1E1E1E' }}
-            >
-              <span
-                className="text-[10px] font-bold uppercase tracking-[0.12em]"
-                style={{ color: '#FF9900' }}
-              >
-                AI CONSOLE{client ? ` — ${client.name.split(' ')[0].toUpperCase()}` : ''}
-              </span>
+            {/* Header */}
+            <div className="shrink-0 flex items-center justify-between px-6 py-4 border-b border-border/50 bg-white/5 rounded-t-2xl">
+              <div className="flex items-center gap-3">
+                <div className="w-6 h-6 rounded-full bg-accent-gradient flex items-center justify-center shadow-glow">
+                  <Command size={12} className="text-white" />
+                </div>
+                <span className="font-display font-semibold text-sm tracking-wide text-white">
+                  AGENT CONSOLE
+                </span>
+                {client && (
+                  <span className="text-xs font-medium text-secondary bg-secondary/10 px-2 py-0.5 rounded-full ml-2">
+                    {client.name.split(' ')[0]}
+                  </span>
+                )}
+              </div>
               <button
                 onClick={() => setOpen(false)}
-                className="text-[11px] font-mono transition-colors"
-                style={{ color: '#888888' }}
-                onMouseEnter={(e) => (e.currentTarget.style.color = '#FF9900')}
-                onMouseLeave={(e) => (e.currentTarget.style.color = '#888888')}
+                className="text-muted hover:text-white transition-colors bg-white/5 hover:bg-white/10 p-1.5 rounded-full"
               >
-                [X]
+                <X size={16} />
               </button>
             </div>
 
-            {/* Chat window */}
-            <div className="flex-1 min-h-0">
+            {/* Chat Body */}
+            <div className="flex-1 min-h-0 bg-panel/30 rounded-b-2xl overflow-hidden">
               {client ? (
                 <ChatWindow
                   client={client}
@@ -70,11 +87,8 @@ export default function ChatBar({ client, portfolioData }) {
                   onGeneratingChange={() => {}}
                 />
               ) : (
-                <div
-                  className="flex h-full items-center justify-center text-[11px] font-mono"
-                  style={{ color: '#444444' }}
-                >
-                  NO CLIENT SELECTED
+                <div className="flex h-full items-center justify-center text-sm font-medium text-muted">
+                  Please select a client to begin.
                 </div>
               )}
             </div>
@@ -82,60 +96,37 @@ export default function ChatBar({ client, portfolioData }) {
         )}
       </AnimatePresence>
 
-      {/* Console bar — always visible */}
-      <div
-        className="shrink-0 flex items-center gap-3 px-4 relative z-50"
-        style={{
-          height: '42px',
-          background: '#111111',
-          borderTop: `1px solid ${open ? '#FF9900' : '#1E1E1E'}`,
-        }}
-      >
-        {/* Connection dot */}
-        <div className="flex items-center gap-1.5 shrink-0">
-          <span
-            className="h-1.5 w-1.5 rounded-full shrink-0"
-            style={{ background: '#00C805' }}
-          />
-          <span className="text-[10px] font-mono" style={{ color: '#444444' }}>
-            READY
-          </span>
-        </div>
-
-        {/* Prompt */}
-        <span className="text-[13px] shrink-0 font-mono" style={{ color: '#FF9900' }}>
-          {'>'}
-        </span>
-
-        {/* Input trigger */}
-        <input
-          type="text"
-          readOnly
-          placeholder={placeholder}
-          className="flex-1 bg-transparent outline-none text-[13px] font-mono cursor-pointer"
-          style={{ color: '#444444' }}
+      {/* Floating Action Bar */}
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-full max-w-2xl px-4">
+        <motion.div 
+          className="glass-card flex items-center gap-4 px-5 py-3 rounded-full w-full border-white/10 bg-background/80 shadow-[0_8px_32px_rgba(0,0,0,0.5)] hover:border-primary/30 transition-colors cursor-text group"
           onClick={() => setOpen(true)}
-          onFocus={() => setOpen(true)}
-        />
-
-        {/* Actions button */}
-        <button
-          onClick={() => setOpen((o) => !o)}
-          className="shrink-0 flex items-center gap-1.5 px-2 py-1 text-[11px] font-mono transition-colors"
-          style={{ border: '1px solid #1E1E1E', color: '#888888', background: 'transparent' }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = '#FF9900'
-            e.currentTarget.style.color = '#FF9900'
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = '#1E1E1E'
-            e.currentTarget.style.color = '#888888'
-          }}
+          initial={{ y: 40, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ type: 'spring', delay: 0.5, damping: 20 }}
         >
-          <Zap size={10} />
-          CHAT
-        </button>
+          {/* Status Indicator */}
+          <div className="flex items-center justify-center relative w-8 h-8 rounded-full bg-white/5 group-hover:bg-primary/10 transition-colors shrink-0">
+            <div className="absolute w-2.5 h-2.5 rounded-full bg-primary shadow-[0_0_12px_rgba(16,185,129,0.8)] animate-pulse" />
+          </div>
+
+          {/* Input field fake */}
+          <div className="flex-1 text-sm font-medium text-muted group-hover:text-white/80 transition-colors truncate">
+            {placeholder}
+          </div>
+
+          {/* Shortcut icon */}
+          <div className="shrink-0 flex items-center gap-2">
+            <div className="hidden sm:flex items-center gap-1 text-[10px] font-medium text-muted bg-white/5 px-2 py-1 rounded-md border border-white/10">
+              <span>⌘</span><span>K</span>
+            </div>
+            <button className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-white shadow-glow hover:scale-105 transition-transform">
+              <MessageSquare size={14} className="fill-current" />
+            </button>
+          </div>
+        </motion.div>
       </div>
     </>
   )
 }
+

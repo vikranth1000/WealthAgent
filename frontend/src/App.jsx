@@ -1,46 +1,76 @@
 import { useState, useEffect } from 'react'
 import { Toaster } from 'sonner'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Shield, TrendingUp, Activity, PieChart, Layers, MessageSquareText } from 'lucide-react'
 import PersonaPills from './components/Chat/PersonaPills.jsx'
 import PerformanceChart from './components/Dashboard/PerformanceChart.jsx'
 import SectorChart from './components/Dashboard/SectorChart.jsx'
 import HoldingsTable from './components/Dashboard/HoldingsTable.jsx'
-import ChatBar from './components/Chat/ChatBar.jsx'
+import ChatDrawer from './components/Chat/ChatDrawer.jsx'
 import { useClients } from './hooks/useClients.js'
 import { usePortfolio } from './hooks/usePortfolio.js'
 
-function SectionHeader({ children }) {
+function SectionHeader({ children, icon: Icon }) {
   return (
-    <div
-      className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.12em] shrink-0"
-      style={{ color: '#FF9900', borderBottom: '1px solid #1E1E1E' }}
-    >
-      {children}
+    <div className="flex items-center gap-2 px-5 py-4 border-b border-border/50">
+      {Icon && <Icon size={16} className="text-secondary" />}
+      <h2 className="font-display font-semibold text-sm tracking-wide text-white uppercase">
+        {children}
+      </h2>
     </div>
   )
 }
 
 function MetricRow({ label, value, valueColor }) {
-  const total = 22
-  const dots = '·'.repeat(Math.max(1, total - label.length - String(value ?? '—').length))
   return (
-    <div className="flex items-baseline text-[12px] font-mono leading-5">
-      <span style={{ color: '#888888' }}>{label}</span>
-      <span className="flex-1" style={{ color: '#2A2A2A', overflow: 'hidden', whiteSpace: 'nowrap' }}>
-        {dots}
-      </span>
-      <span style={{ color: valueColor ?? '#FFFFFF' }}>{value ?? '—'}</span>
+    <div className="flex items-center justify-between py-2.5 group">
+      <span className="text-xs font-medium text-muted uppercase tracking-wider group-hover:text-white transition-colors">{label}</span>
+      <div className="flex items-center gap-2">
+        <span 
+          className="font-mono text-sm font-semibold" 
+          style={{ color: valueColor ?? '#FFFFFF' }}
+        >
+          {value ?? '—'}
+        </span>
+      </div>
     </div>
   )
+}
+
+// Container animation variants
+const containerVariants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1, delayChildren: 0.1 }
+  }
+}
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 10 },
+  show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 300, damping: 30 } }
 }
 
 export default function App() {
   const { clients, loading: clientsLoading } = useClients()
   const [selectedClient, setSelectedClient] = useState(null)
   const portfolioData = usePortfolio(selectedClient?.id)
+  const [isChatOpen, setIsChatOpen] = useState(false)
 
   useEffect(() => {
     if (clients.length > 0 && !selectedClient) setSelectedClient(clients[0])
   }, [clients, selectedClient])
+
+  useEffect(() => {
+    function onKeydown(e) {
+      if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault()
+        setIsChatOpen((o) => !o)
+      }
+    }
+    window.addEventListener('keydown', onKeydown)
+    return () => window.removeEventListener('keydown', onKeydown)
+  }, [])
 
   const { portfolio, analysis, performanceHistory, holdingsDetail, loading } = portfolioData
   const displayHoldings = holdingsDetail.length > 0 ? holdingsDetail : portfolio?.holdings ?? []
@@ -52,192 +82,215 @@ export default function App() {
     : []
 
   return (
-    <div
-      className="flex flex-col h-screen w-screen overflow-hidden font-mono"
-      style={{ background: '#0D0D0D', color: '#FFFFFF' }}
-    >
-      {/* ── Top bar ── */}
-      <div
-        className="shrink-0 flex items-center"
-        style={{ height: '40px', background: '#111111', borderBottom: '1px solid #1E1E1E' }}
+    <div className="flex h-screen w-screen overflow-hidden bg-background text-white font-sans relative">
+      
+      {/* ── Main dashboard area ── */}
+      <div 
+        className="flex flex-col flex-1 h-full relative z-10"
       >
-        <div
-          className="shrink-0 flex items-center px-4 h-full"
-          style={{ borderRight: '1px solid #1E1E1E' }}
-        >
-          <span
-            className="text-[11px] font-bold tracking-[0.15em] uppercase"
-            style={{ color: '#FF9900' }}
-          >
-            ▸ WEALTHAGENT
-          </span>
-        </div>
-        <PersonaPills
-          clients={clients}
-          selectedClient={selectedClient}
-          onSelectClient={setSelectedClient}
-          loading={clientsLoading}
-        />
-      </div>
-
-      {/* ── Main area ── */}
-      <div className="flex flex-1 min-h-0">
-
-        {/* Left sidebar */}
-        <div
-          className="shrink-0 flex flex-col overflow-y-auto"
-          style={{ width: '260px', borderRight: '1px solid #1E1E1E', background: '#111111' }}
-        >
-          {/* Portfolio summary */}
-          <SectionHeader>Portfolio</SectionHeader>
-          <div className="px-3 py-3 shrink-0">
-            <div className="text-[12px] font-bold" style={{ color: '#FFFFFF' }}>
-              {selectedClient?.name ?? '—'}
+        {/* ── Top navbar ── */}
+        <header className="shrink-0 flex items-center justify-between px-6 h-16 bg-panel/30 border-b border-border/50 sticky top-0 backdrop-blur-md z-20">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded bg-white flex items-center justify-center">
+              <Shield size={18} className="text-black" strokeWidth={2.5} />
             </div>
-            <div className="text-[10px] mt-0.5 uppercase tracking-wider" style={{ color: '#888888' }}>
-              {selectedClient?.persona?.replace(/_/g, ' ') ?? ''}
-            </div>
-            <div
-              className="font-bold leading-none mt-3"
-              style={{ fontSize: '1.9rem', color: '#FF9900', letterSpacing: '-0.02em' }}
+            <span className="font-display font-semibold text-lg tracking-tight">
+              WealthAgent
+            </span>
+          </div>
+          <div className="flex-1 flex justify-end items-center gap-6">
+            <PersonaPills
+              clients={clients}
+              selectedClient={selectedClient}
+              onSelectClient={setSelectedClient}
+              loading={clientsLoading}
+            />
+            <div className="w-px h-6 bg-border" />
+            <button 
+              onClick={() => setIsChatOpen(!isChatOpen)}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-md hover:bg-white/10 transition-colors text-sm font-medium text-muted hover:text-white"
             >
-              {loading
-                ? '———'
-                : analysis
-                ? `$${Math.round(analysis.total_value).toLocaleString()}`
-                : '—'}
-            </div>
-            {analysis && (
-              <div
-                className="text-[12px] mt-1 font-mono"
-                style={{ color: analysis.total_return >= 0 ? '#00C805' : '#FF3B30' }}
-              >
-                {analysis.total_return >= 0 ? '+' : ''}
-                {(analysis.total_return * 100).toFixed(1)}% YTD
-              </div>
-            )}
+              <MessageSquareText size={16} />
+              <span>{isChatOpen ? 'Close Chat' : 'Open Chat'}</span>
+              <kbd className="hidden sm:inline-block border border-white/20 rounded px-1.5 py-0.5 text-[10px] ml-1">⌘K</kbd>
+            </button>
           </div>
+        </header>
 
-          {/* Key metrics */}
-          <SectionHeader>Key Metrics</SectionHeader>
-          <div className="px-3 py-2.5 flex flex-col gap-1.5 shrink-0">
-            {loading ? (
-              <div className="text-[11px]" style={{ color: '#444444' }}>LOADING...</div>
-            ) : analysis ? (
-              <>
-                <MetricRow
-                  label="YTD RETURN"
-                  value={`${analysis.total_return >= 0 ? '+' : ''}${(analysis.total_return * 100).toFixed(1)}%`}
-                  valueColor={analysis.total_return >= 0 ? '#00C805' : '#FF3B30'}
-                />
-                <MetricRow
-                  label="SHARPE RATIO"
-                  value={analysis.sharpe_ratio?.toFixed(2)}
-                />
-                <MetricRow
-                  label="MAX DRAWDOWN"
-                  value={`${(analysis.max_drawdown * 100).toFixed(1)}%`}
-                  valueColor="#FF3B30"
-                />
-                <MetricRow
-                  label="TOTAL VALUE"
-                  value={`$${(analysis.total_value / 1000).toFixed(0)}K`}
-                />
-              </>
-            ) : (
-              <div className="text-[11px]" style={{ color: '#444444' }}>NO DATA</div>
-            )}
-          </div>
-
-          {/* Allocation text bars */}
-          <SectionHeader>Allocation</SectionHeader>
-          <div className="px-3 py-2.5 flex-1">
-            {alloc.length === 0 ? (
-              <div className="text-[11px]" style={{ color: '#444444' }}>
-                {loading ? 'LOADING...' : 'NO DATA'}
+        {/* ── Main content area ── */}
+        <main className="flex flex-1 min-h-0 p-4 gap-4 overflow-hidden">
+          
+          {/* Left sidebar */}
+          <motion.div 
+            className="shrink-0 flex flex-col w-[300px] gap-4 overflow-y-auto no-scrollbar pb-8"
+            variants={containerVariants}
+            initial="hidden"
+            animate="show"
+          >
+            {/* Portfolio Summary Card */}
+            <motion.div variants={itemVariants} className="glass-card flex flex-col pt-2 pb-6 px-6">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="font-display font-semibold text-xs text-muted uppercase tracking-widest mt-4">Overview</h3>
+                <Activity size={14} className="text-muted mt-4" />
               </div>
-            ) : (
-              alloc.map(([name, value]) => {
-                const pct = Math.round(value * 100)
-                const filled = Math.round((pct / 100) * 10)
-                const bar = '█'.repeat(filled) + '░'.repeat(10 - filled)
-                return (
-                  <div key={name} className="mb-2.5">
-                    <div className="flex justify-between text-[10px] mb-0.5">
-                      <span style={{ color: '#888888' }}>
-                        {name.toUpperCase().slice(0, 14)}
-                      </span>
-                      <span style={{ color: '#FFFFFF' }}>{pct}%</span>
-                    </div>
-                    <div className="text-[11px] tracking-tight" style={{ color: '#FF9900' }}>
-                      {bar}
-                    </div>
+              
+              <div className="mt-2 text-white">
+                <h1 className="text-xl font-semibold tracking-tight">
+                  {selectedClient?.name ?? '—'}
+                </h1>
+                <div className="text-[11px] font-medium uppercase tracking-wider text-muted mt-1 bg-white/5 inline-block px-2 py-0.5 rounded border border-white/10">
+                  {selectedClient?.persona?.replace(/_/g, ' ') ?? ''}
+                </div>
+              </div>
+
+              <div className="mt-8 flex flex-col">
+                <span className="text-xs font-medium text-muted uppercase tracking-wider">Total Value</span>
+                <div className="text-3xl font-display font-bold text-white mt-1">
+                  {loading
+                    ? '———'
+                    : analysis
+                    ? `$${Math.round(analysis.total_value).toLocaleString()}`
+                    : '—'}
+                </div>
+                {analysis && (
+                  <div className={`text-xs font-medium mt-2 flex items-center gap-1 ${analysis.total_return >= 0 ? 'text-success' : 'text-danger'}`}>
+                    {analysis.total_return >= 0 ? <TrendingUp size={14} /> : <TrendingUp size={14} className="rotate-180" />}
+                    {analysis.total_return >= 0 ? '+' : ''}
+                    {(analysis.total_return * 100).toFixed(1)}% YTD
                   </div>
-                )
-              })
-            )}
-          </div>
-        </div>
+                )}
+              </div>
+            </motion.div>
 
-        {/* Right area */}
-        <div className="flex-1 flex flex-col min-h-0 min-w-0">
+            {/* Key Metrics Card */}
+            <motion.div variants={itemVariants} className="glass-card flex flex-col flex-1 min-h-[200px]">
+              <SectionHeader icon={Activity}>Key Metrics</SectionHeader>
+              <div className="px-5 py-3 flex flex-col divide-y divide-border/30">
+                {loading ? (
+                  <div className="flex items-center justify-center p-8 text-sm text-muted animate-pulse">Loading data...</div>
+                ) : analysis ? (
+                  <>
+                    <MetricRow
+                      label="YTD Return"
+                      value={`${analysis.total_return >= 0 ? '+' : ''}${(analysis.total_return * 100).toFixed(1)}%`}
+                      valueColor={analysis.total_return >= 0 ? '#10b981' : '#ef4444'}
+                    />
+                    <MetricRow
+                      label="Sharpe Ratio"
+                      value={analysis.sharpe_ratio?.toFixed(2)}
+                      valueColor="#FAFAFA"
+                    />
+                    <MetricRow
+                      label="Max Drawdown"
+                      value={`${(analysis.max_drawdown * 100).toFixed(1)}%`}
+                      valueColor="#ef4444"
+                    />
+                    <MetricRow
+                      label="Total Value"
+                      value={`$${(analysis.total_value / 1000).toFixed(0)}K`}
+                      valueColor="#FAFAFA"
+                    />
+                  </>
+                ) : (
+                  <div className="text-sm text-muted p-4 text-center">No metrics available</div>
+                )}
+              </div>
+            </motion.div>
 
-          {/* Performance chart */}
-          <div
-            className="shrink-0 flex flex-col"
-            style={{ height: '200px', borderBottom: '1px solid #1E1E1E' }}
+            {/* Asset Allocation Card */}
+            <motion.div variants={itemVariants} className="glass-card flex flex-col">
+              <SectionHeader icon={PieChart}>Asset Allocation</SectionHeader>
+              <div className="px-5 py-5 flex flex-col gap-4">
+                {alloc.length === 0 ? (
+                  <div className="text-sm text-muted text-center p-4">
+                    {loading ? 'Loading...' : 'No allocation data'}
+                  </div>
+                ) : (
+                  alloc.map(([name, value], i) => {
+                    const pct = Math.round(value * 100)
+                    return (
+                      <div key={name} className="flex flex-col gap-1.5">
+                        <div className="flex justify-between items-center text-xs font-medium">
+                          <span className="text-muted tracking-wide uppercase">{name}</span>
+                          <span className="text-white font-mono">{pct}%</span>
+                        </div>
+                        <div className="h-1 w-full bg-white/10 rounded-full overflow-hidden">
+                          <motion.div 
+                            initial={{ width: 0 }}
+                            animate={{ width: `${pct}%` }}
+                            transition={{ duration: 1, delay: i * 0.1, ease: "easeOut" }}
+                            className="h-full bg-white rounded-full"
+                          />
+                        </div>
+                      </div>
+                    )
+                  })
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+
+          {/* Right Content Area */}
+          <motion.div 
+            className="flex-1 flex flex-col gap-4 min-w-0"
+            variants={containerVariants}
+            initial="hidden"
+            animate="show"
           >
-            <SectionHeader>Performance</SectionHeader>
-            <div className="flex-1 min-h-0">
-              <PerformanceChart data={performanceHistory} />
-            </div>
-          </div>
-
-          {/* Bottom split: sector + holdings */}
-          <div className="flex flex-1 min-h-0">
-
-            {/* Sector exposure */}
-            <div
-              className="shrink-0 flex flex-col overflow-hidden"
-              style={{ width: '38%', borderRight: '1px solid #1E1E1E' }}
-            >
-              <SectionHeader>Sector Exposure</SectionHeader>
-              <div className="flex-1 overflow-hidden">
-                <SectorChart data={analysis?.sector_breakdown} />
+            {/* Performance Chart Card */}
+            <motion.div variants={itemVariants} className="glass-card shrink-0 flex flex-col h-[320px]">
+              <SectionHeader icon={TrendingUp}>Performance History</SectionHeader>
+              <div className="flex-1 p-4 min-h-0 relative">
+                <PerformanceChart data={performanceHistory} />
               </div>
-            </div>
+            </motion.div>
 
-            {/* Holdings table */}
-            <div className="flex-1 flex flex-col min-w-0">
-              <SectionHeader>Holdings</SectionHeader>
-              <div className="flex-1 overflow-y-auto">
-                <HoldingsTable
-                  holdings={displayHoldings}
-                  enhanced={holdingsDetail.length > 0}
-                />
+            {/* Bottom Split: Sector + Holdings */}
+            <motion.div variants={itemVariants} className="flex gap-4 flex-1 min-h-0 pb-8">
+              
+              {/* Sector Exposure Card */}
+              <div className="glass-card flex flex-col w-[38%] min-h-0">
+                <SectionHeader icon={PieChart}>Sector Exposure</SectionHeader>
+                <div className="flex-1 p-4 overflow-hidden relative">
+                  <SectorChart data={analysis?.sector_breakdown} />
+                </div>
               </div>
-            </div>
 
-          </div>
-        </div>
+              {/* Holdings Table Card */}
+              <div className="glass-card flex flex-col flex-1 min-w-0 min-h-0">
+                <SectionHeader icon={Layers}>Portfolio Holdings</SectionHeader>
+                <div className="flex-1 overflow-hidden">
+                  <HoldingsTable
+                    holdings={displayHoldings}
+                    enhanced={holdingsDetail.length > 0}
+                  />
+                </div>
+              </div>
+            </motion.div>
+
+          </motion.div>
+        </main>
       </div>
 
-      {/* Console bar + chat overlay */}
-      <ChatBar client={selectedClient} portfolioData={portfolioData} />
+      {/* ── Slide-in Chat Drawer ── */}
+      <AnimatePresence>
+        {isChatOpen && (
+          <ChatDrawer 
+            client={selectedClient} 
+            portfolioData={portfolioData} 
+            onClose={() => setIsChatOpen(false)} 
+          />
+        )}
+      </AnimatePresence>
 
       <Toaster
         position="top-right"
         toastOptions={{
-          style: {
-            background: '#111111',
-            border: '1px solid #1E1E1E',
-            color: '#FFFFFF',
-            fontFamily: 'monospace',
-            borderRadius: 0,
-            fontSize: '12px',
-          },
+          className: 'glass-card border-l-2 border-l-white !bg-panel !text-white !rounded-lg !shadow-subtle',
+          style: { fontFamily: 'Inter, sans-serif' },
         }}
       />
     </div>
   )
 }
+

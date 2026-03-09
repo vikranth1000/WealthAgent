@@ -34,22 +34,13 @@ export default function SuggestedPrompts({ persona, onSelect, dynamicSuggestions
   if (!prompts.length) return null
 
   return (
-    <div className="flex flex-wrap gap-1.5 px-3 py-2 shrink-0">
+    <div className="flex flex-wrap justify-center gap-2 px-3 py-2 shrink-0">
       {prompts.map((prompt) => (
         <button
           key={prompt}
           type="button"
           onClick={() => onSelect?.(prompt)}
-          className="text-[11px] px-2 py-1 font-mono"
-          style={{ border: '1px solid #1E1E1E', color: '#888888', background: 'transparent' }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = '#FF9900'
-            e.currentTarget.style.color = '#FF9900'
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = '#1E1E1E'
-            e.currentTarget.style.color = '#888888'
-          }}
+          className="text-xs px-3 py-1.5 font-medium border border-border text-muted bg-panel hover:bg-white hover:text-black transition-colors rounded-full shadow-sm"
         >
           {prompt}
         </button>
@@ -57,3 +48,4 @@ export default function SuggestedPrompts({ persona, onSelect, dynamicSuggestions
     </div>
   )
 }
+

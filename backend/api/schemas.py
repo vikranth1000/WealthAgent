@@ -204,5 +204,8 @@ class HoldingDetailResponse(BaseModel):
     market_value: float
     unrealized_pnl: float
     unrealized_pnl_pct: float
+    day_change_pct: float
+    pe_ratio: float | None
+    dividend_yield: float | None
     asset_class: str
     sector: str

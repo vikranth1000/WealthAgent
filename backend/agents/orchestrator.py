@@ -16,7 +16,7 @@ import asyncio
 import logging
 from typing import Any, Literal
 
-import anthropic
+import openai
 from langgraph.graph import END, StateGraph
 
 from agents.comms_agent import comms_agent_node
@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 # Intent classification
 # ---------------------------------------------------------------------------
 
-_ROUTE_MODEL = "claude-sonnet-4-20250514"
+_ROUTE_MODEL = "sonar-pro"
 
 _ROUTE_SYSTEM_PROMPT = """\
 You are a query intent classifier for a wealth management assistant.
@@ -72,14 +72,19 @@ async def classify_intent(query: str) -> QueryIntent:
         One of: "portfolio", "market", "full_review".
     """
     try:
-        client = anthropic.AsyncAnthropic(api_key=settings.anthropic_api_key)
-        response = await client.messages.create(
+        client = openai.AsyncOpenAI(
+            api_key=settings.perplexity_api_key,
+            base_url="https://api.perplexity.ai"
+        )
+        response = await client.chat.completions.create(
             model=_ROUTE_MODEL,
             max_tokens=20,
-            system=_ROUTE_SYSTEM_PROMPT,
-            messages=[{"role": "user", "content": query}],
+            messages=[
+                {"role": "system", "content": _ROUTE_SYSTEM_PROMPT},
+                {"role": "user", "content": query}
+            ],
         )
-        intent = response.content[0].text.strip().lower()
+        intent = (response.choices[0].message.content or "").strip().lower()
 
         if intent in _VALID_INTENTS:
             logger.info("classify_intent: %r → %s", query[:80], intent)

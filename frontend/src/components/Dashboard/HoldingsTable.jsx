@@ -1,17 +1,21 @@
 import { useState } from 'react'
+import { motion } from 'framer-motion'
+import { ChevronUp, ChevronDown } from 'lucide-react'
 
 const BASE_COLS = [
-  { key: 'ticker', label: 'TICKER' },
-  { key: 'shares', label: 'SHARES' },
-  { key: 'asset_class', label: 'CLASS' },
+  { key: 'ticker', label: 'Ticker' },
+  { key: 'shares', label: 'Shares' },
+  { key: 'asset_class', label: 'Class' },
 ]
 
 const ENHANCED_COLS = [
-  { key: 'ticker', label: 'TICKER' },
-  { key: 'shares', label: 'SHARES' },
-  { key: 'current_price', label: 'PX' },
-  { key: 'market_value', label: 'VALUE' },
+  { key: 'ticker', label: 'Ticker' },
+  { key: 'shares', label: 'Shares' },
+  { key: 'current_price', label: 'Price' },
+  { key: 'day_change_pct', label: '1D %' },
+  { key: 'market_value', label: 'Value' },
   { key: 'unrealized_pnl', label: 'P&L' },
+  { key: 'pe_ratio', label: 'P/E' },
 ]
 
 function formatCell(key, value) {
@@ -23,6 +27,11 @@ function formatCell(key, value) {
     const prefix = value >= 0 ? '+' : ''
     return `${prefix}$${Math.round(value).toLocaleString()}`
   }
+  if (key === 'day_change_pct') {
+    const prefix = value >= 0 ? '+' : ''
+    return `${prefix}${value.toFixed(2)}%`
+  }
+  if (key === 'pe_ratio' || key === 'dividend_yield') return value.toFixed(2)
   return String(value)
 }
 
@@ -47,57 +56,69 @@ export default function HoldingsTable({ holdings = [], enhanced = false }) {
 
   if (!holdings.length) {
     return (
-      <div className="px-3 py-4 text-[11px] font-mono" style={{ color: '#444444' }}>
-        NO HOLDINGS
+      <div className="px-5 py-8 text-sm text-center font-medium text-muted">
+        No holdings found.
       </div>
     )
   }
 
   return (
-    <table className="w-full" style={{ borderCollapse: 'collapse' }}>
-      <thead style={{ position: 'sticky', top: 0, background: '#111111', zIndex: 1 }}>
-        <tr style={{ borderBottom: '1px solid #1E1E1E' }}>
-          {COLS.map(({ key, label }) => (
-            <th
-              key={key}
-              className="px-3 py-1.5 text-left cursor-pointer select-none text-[10px] uppercase tracking-wider font-mono"
-              style={{ color: sortKey === key ? '#FF9900' : '#888888' }}
-              onClick={() => handleSort(key)}
-            >
-              {label}{sortKey === key ? (sortDir === 'asc' ? ' ▲' : ' ▼') : ''}
-            </th>
-          ))}
-        </tr>
-      </thead>
-      <tbody>
-        {sorted.map((h, i) => (
-          <tr
-            key={h.ticker || i}
-            style={{ borderBottom: '1px solid #1A1A1A' }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = '#1A1A1A')}
-            onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-          >
-            {COLS.map(({ key }) => (
-              <td
+    <div className="w-full h-full overflow-auto no-scrollbar">
+      <table className="w-full text-left border-collapse">
+        <thead className="sticky top-0 bg-background/90 backdrop-blur-xl z-20 shadow-sm border-b border-border/50">
+          <tr>
+            {COLS.map(({ key, label }) => (
+              <th
                 key={key}
-                className="px-3 py-2 text-[12px] font-mono"
-                style={{
-                  color:
-                    key === 'ticker'
-                      ? '#FF9900'
-                      : key === 'unrealized_pnl' && h[key] != null
-                      ? h[key] >= 0
-                        ? '#00C805'
-                        : '#FF3B30'
-                      : '#FFFFFF',
-                }}
+                className="px-4 py-3 text-xs font-semibold uppercase tracking-wider cursor-pointer select-none group transition-colors"
+                style={{ color: sortKey === key ? '#FFFFFF' : '#a1a1aa' }}
+                onClick={() => handleSort(key)}
               >
-                {formatCell(key, h[key])}
-              </td>
+                <div className="flex items-center gap-1 group-hover:text-white transition-colors">
+                  {label}
+                  {sortKey === key && (
+                    sortDir === 'asc' ? <ChevronUp size={12} strokeWidth={2.5} className="text-white" /> : <ChevronDown size={12} strokeWidth={2.5} className="text-white" />
+                  )}
+                </div>
+              </th>
             ))}
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {sorted.map((h, i) => (
+            <motion.tr
+              key={h.ticker || i}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: i * 0.05 }}
+              className="border-b border-border/30 hover:bg-white/5 transition-colors group cursor-default"
+            >
+              {COLS.map(({ key }) => (
+                <td
+                  key={key}
+                  className={`px-4 py-3 text-sm transition-colors ${
+                    key === 'ticker' || key === 'unrealized_pnl' || key === 'shares' || key === 'current_price' || key === 'market_value' ? 'font-mono' : 'font-sans font-medium text-muted group-hover:text-white/80'
+                  }`}
+                  style={
+                    key === 'ticker'
+                      ? { color: '#FFFFFF', fontWeight: 500 }
+                      : (key === 'unrealized_pnl' || key === 'day_change_pct') && h[key] != null
+                      ? { color: h[key] >= 0 ? '#10B981' : '#EF4444', fontWeight: 500 }
+                      : {}
+                  }
+                >
+                  <span className={key === 'ticker' ? 'bg-white/10 px-2 py-1 rounded text-xs tracking-wide' : ''}>
+                    {formatCell(key, h[key])}
+                  </span>
+                </td>
+              ))}
+            </motion.tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   )
 }
+
+
+

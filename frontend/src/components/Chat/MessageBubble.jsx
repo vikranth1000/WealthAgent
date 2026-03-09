@@ -1,121 +1,11 @@
 import { cloneElement } from 'react'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import { parseBlocks } from './blockParser'
 import { BLOCK_COMPONENTS, BlockSkeleton } from './blocks'
 
-function parseInline(text) {
-  const parts = []
-  const regex = /(\*\*(.+?)\*\*|\*(.+?)\*|`([^`]+)`)/g
-  let lastIndex = 0
-  let match
-  let idx = 0
-  while ((match = regex.exec(text)) !== null) {
-    if (match.index > lastIndex) parts.push(text.slice(lastIndex, match.index))
-    if (match[2]) parts.push(<strong key={idx++} style={{ color: '#FFFFFF', fontWeight: 700 }}>{match[2]}</strong>)
-    else if (match[3]) parts.push(<em key={idx++} style={{ color: '#FF9900' }}>{match[3]}</em>)
-    else if (match[4])
-      parts.push(
-        <code key={idx++} className="font-mono text-[12px] px-1" style={{ color: '#FF9900', background: '#1A1A1A' }}>
-          {match[4]}
-        </code>
-      )
-    lastIndex = match.index + match[0].length
-  }
-  if (lastIndex < text.length) parts.push(text.slice(lastIndex))
-  return parts
-}
-
-function renderMarkdown(content) {
-  const lines = content.split('\n')
-  const elements = []
-  let i = 0
-  let k = 0
-
-  while (i < lines.length) {
-    const line = lines[i]
-
-    if (line.startsWith('```')) {
-      const lang = line.slice(3).trim()
-      const codeLines = []
-      i++
-      while (i < lines.length && !lines[i].startsWith('```')) { codeLines.push(lines[i]); i++ }
-      elements.push(
-        <div key={k++} className="my-2" style={{ border: '1px solid #1E1E1E' }}>
-          {lang && (
-            <div className="px-3 py-1 text-[10px] uppercase tracking-wide font-mono"
-              style={{ background: '#1A1A1A', color: '#FF9900', borderBottom: '1px solid #1E1E1E' }}>
-              {lang}
-            </div>
-          )}
-          <pre className="font-mono text-[12px] p-3 overflow-x-auto whitespace-pre"
-            style={{ background: '#0D0D0D', color: '#FFFFFF' }}>
-            {codeLines.join('\n')}
-          </pre>
-        </div>
-      )
-      i++; continue
-    }
-
-    if (line.startsWith('### ')) {
-      elements.push(<h3 key={k++} className="font-bold text-sm mt-2.5 mb-1 font-mono" style={{ color: '#FF9900' }}>{parseInline(line.slice(4))}</h3>)
-      i++; continue
-    }
-    if (line.startsWith('## ')) {
-      elements.push(<h2 key={k++} className="font-bold text-base mt-3 mb-1.5 font-mono" style={{ color: '#FF9900' }}>{parseInline(line.slice(3))}</h2>)
-      i++; continue
-    }
-
-    if (line.startsWith('- ') || line.startsWith('* ')) {
-      const items = []
-      while (i < lines.length && (lines[i].startsWith('- ') || lines[i].startsWith('* '))) {
-        items.push(lines[i].slice(2)); i++
-      }
-      elements.push(
-        <ul key={k++} className="ml-2 my-1 space-y-0.5">
-          {items.map((item, idx) => (
-            <li key={idx} className="text-[13px] font-mono" style={{ color: '#CCCCCC' }}>
-              <span style={{ color: '#FF9900' }}>- </span>{parseInline(item)}
-            </li>
-          ))}
-        </ul>
-      )
-      continue
-    }
-
-    if (/^\d+\.\s/.test(line)) {
-      const items = []
-      while (i < lines.length && /^\d+\.\s/.test(lines[i])) {
-        items.push(lines[i].replace(/^\d+\.\s/, '')); i++
-      }
-      elements.push(
-        <ol key={k++} className="ml-2 my-1 space-y-0.5">
-          {items.map((item, idx) => (
-            <li key={idx} className="text-[13px] font-mono" style={{ color: '#CCCCCC' }}>
-              <span style={{ color: '#FF9900' }}>{idx + 1}. </span>{parseInline(item)}
-            </li>
-          ))}
-        </ol>
-      )
-      continue
-    }
-
-    if (line.trim() === '---' || line.trim() === '***') {
-      elements.push(<hr key={k++} className="my-2" style={{ borderColor: '#1E1E1E' }} />)
-      i++; continue
-    }
-    if (line.trim() === '') { elements.push(<div key={k++} className="h-1.5" />); i++; continue }
-
-    elements.push(
-      <p key={k++} className="my-0.5 leading-6 text-[13px] font-mono" style={{ color: '#CCCCCC' }}>
-        {parseInline(line)}
-      </p>
-    )
-    i++
-  }
-  return elements
-}
-
 const cursor = (
-  <span className="inline-block ml-0.5 h-3.5 w-0.5 animate-pulse" style={{ background: '#FF9900' }} />
+  <span className="inline-block ml-1 h-4 w-1 animate-pulse bg-white/70 rounded-full align-middle my-auto" />
 )
 
 function appendCursor(elements) {
@@ -134,12 +24,18 @@ function renderContent(content, isStreaming) {
   const elements = []
   segments.forEach((seg, idx) => {
     if (seg.type === 'text') {
-      elements.push(<div key={idx}>{renderMarkdown(seg.content)}</div>)
+      elements.push(
+        <div key={idx} className="prose prose-invert prose-sm max-w-none text-white prose-p:leading-relaxed prose-pre:bg-panel prose-pre:border prose-pre:border-border prose-a:text-white prose-a:underline prose-headings:font-display prose-headings:font-medium">
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+            {seg.content}
+          </ReactMarkdown>
+        </div>
+      )
     } else if (seg.type === 'pending-block') {
       elements.push(<BlockSkeleton key={idx} blockType={seg.blockType} />)
     } else {
       const Block = BLOCK_COMPONENTS[seg.type]
-      if (Block) elements.push(<div key={idx} className="my-2"><Block data={seg.data} /></div>)
+      if (Block) elements.push(<div key={idx} className="my-3"><Block data={seg.data} /></div>)
     }
   })
   return elements
@@ -147,14 +43,19 @@ function renderContent(content, isStreaming) {
 
 export default function MessageBubble({ role, content, streaming, error }) {
   const isUser = role === 'user'
-  let rendered = isUser ? null : renderContent(content, streaming)
-  if (streaming && rendered) rendered = appendCursor(rendered)
+  
+  // Minimal parsing for user messages, rich for assistant
+  let rendered = isUser 
+    ? <div className="text-sm font-medium text-white/80">{content}</div>
+    : renderContent(content, streaming)
+
+  if (streaming && !isUser && rendered) rendered = appendCursor(rendered)
 
   if (isUser) {
     return (
-      <div className="flex justify-end mb-2">
-        <div className="text-[13px] font-mono" style={{ color: '#FF9900' }}>
-          {'> '}{content}
+      <div className="flex justify-end mb-6 pr-2">
+        <div className="bg-[#2A2A2E] px-5 py-3 rounded-3xl max-w-[85%] text-[15px] shadow-md border border-white/5">
+          <div className="text-sm font-medium text-white">{content}</div>
         </div>
       </div>
     )
@@ -162,15 +63,19 @@ export default function MessageBubble({ role, content, streaming, error }) {
 
   if (error) {
     return (
-      <div className="mb-3 text-[13px] font-mono" style={{ color: '#FF3B30' }}>
-        ERROR: {rendered}
+      <div className="mb-4 text-sm font-medium text-danger bg-danger/10 border border-danger/20 px-4 py-3 rounded-xl max-w-[90%]">
+        <span className="font-bold mr-2">Error:</span> {content || "Failed to generate response"}
       </div>
     )
   }
 
   return (
-    <div className="mb-3 pl-3" style={{ borderLeft: '2px solid #FF9900' }}>
-      {rendered}
+    <div className="mb-6 flex gap-3">
+      <div className="w-8 h-8 rounded-full border border-border bg-white/5 shrink-0 mt-1" />
+      <div className="flex-1 min-w-0 pr-4 mt-1.5">
+        {rendered}
+      </div>
     </div>
   )
 }
+

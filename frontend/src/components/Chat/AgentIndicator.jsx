@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react'
 
 const AGENT_LABELS = {
-  portfolio_analyzer: 'ANALYZING PORTFOLIO',
-  market_researcher: 'RESEARCHING MARKETS',
-  client_communicator: 'COMPOSING RESPONSE',
-  orchestrator: 'ROUTING QUERY',
+  portfolio_analyzer: 'Analyzing Portfolio',
+  market_researcher: 'Researching Markets',
+  client_communicator: 'Composing Response',
+  orchestrator: 'Routing Query',
 }
 
 export default function AgentIndicator({ agent }) {
-  const label = AGENT_LABELS[agent] ?? agent?.replace(/_/g, ' ').toUpperCase() ?? 'PROCESSING'
+  const label = AGENT_LABELS[agent] ?? agent?.replace(/_/g, ' ') ?? 'Processing'
   const [dots, setDots] = useState('')
 
   useEffect(() => {
@@ -19,8 +19,10 @@ export default function AgentIndicator({ agent }) {
   }, [])
 
   return (
-    <div className="py-1 text-[11px] font-mono" style={{ color: '#FF9900' }}>
+    <div className="py-1 text-xs font-medium text-white/60 tracking-wider flex items-center gap-2">
+      <div className="w-1.5 h-1.5 rounded-full bg-white/60 animate-pulse" />
       {label}{dots}
     </div>
   )
 }
+

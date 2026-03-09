@@ -16,52 +16,57 @@ export default function SectorChart({ data }) {
 
   if (!data || Object.keys(data).length === 0) {
     return (
-      <div className="h-full flex items-center justify-center text-[11px] font-mono" style={{ color: '#444444' }}>
-        NO DATA
+      <div className="h-full flex items-center justify-center text-sm text-muted font-medium">
+        No sector data available.
       </div>
     )
   }
 
-  const height = Math.max(80, Object.keys(data).length * 28 + 16)
+  const height = Math.max(80, Object.keys(data).length * 40 + 20)
 
   return (
     <ResponsiveContainer width="100%" height={height}>
       <BarChart
         data={chartData}
         layout="vertical"
-        margin={{ top: 4, right: 48, left: 4, bottom: 4 }}
+        margin={{ top: 8, right: 48, left: 4, bottom: 8 }}
       >
-        <CartesianGrid strokeDasharray="1 4" stroke="#1E1E1E" horizontal={false} />
+        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" horizontal={false} />
         <XAxis type="number" hide />
         <YAxis
           type="category"
           dataKey="name"
-          width={92}
-          tick={{ fill: '#888888', fontSize: 10, fontFamily: 'monospace' }}
+          width={100}
+          tick={{ fill: '#a1a1aa', fontSize: 11, fontFamily: 'Inter, sans-serif', fontWeight: 500 }}
           axisLine={false}
           tickLine={false}
         />
         <Tooltip
           formatter={(v) => `${v.toFixed(1)}%`}
           contentStyle={{
-            background: '#111111',
-            border: '1px solid #FF9900',
-            borderRadius: 0,
-            color: '#FFFFFF',
-            fontSize: '11px',
-            fontFamily: 'monospace',
+            background: '#101010',
+            border: '1px solid #2A2A2A',
+            borderRadius: '8px',
+            color: '#ffffff',
+            fontSize: '13px',
+            fontWeight: 500,
+            boxShadow: '0 4px 20px -2px rgba(0, 0, 0, 0.5)',
+            fontFamily: 'Inter, sans-serif',
+            padding: '8px 12px'
           }}
-          cursor={{ fill: 'rgba(255,153,0,0.05)' }}
+          cursor={{ fill: 'rgba(255,255,255,0.05)' }}
         />
-        <Bar dataKey="value" fill="#FF9900" radius={0} isAnimationActive={false}>
+        <Bar dataKey="value" fill="#FFFFFF" radius={[0, 2, 2, 0]} isAnimationActive={true} animationDuration={1000} barSize={12}>
           <LabelList
             dataKey="value"
             position="right"
             formatter={(v) => `${v.toFixed(1)}%`}
-            style={{ fontSize: 10, fill: '#FF9900', fontFamily: 'monospace' }}
+            style={{ fontSize: 11, fill: '#FFFFFF', fontFamily: '"SF Mono", monospace', fontWeight: 500 }}
           />
         </Bar>
       </BarChart>
     </ResponsiveContainer>
   )
 }
+
+
