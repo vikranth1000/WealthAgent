@@ -21,7 +21,7 @@ const PERSONA_META = {
   institutional: {
     label: 'Institutional',
     initials: (name) => name.split(' ').map((w) => w[0]).join(''),
-    avatarColor: 'bg-teal',
+    avatarColor: 'bg-teal-500',
   },
 }
 

@@ -136,7 +136,7 @@ export function useWebSocket(clientId) {
             ...prev,
             {
               role: 'assistant',
-              content: data.message ?? 'An error occurred. Please try again.',
+              content: data.content ?? 'An error occurred. Please try again.',
               error: true,
             },
           ])
