@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { MessageSquare, Trash2, Undo2, Zap, ArrowRightLeft, Scissors, BarChart3, FileText, X } from 'lucide-react'
+import { MessageSquare, Trash2, Zap, ArrowRightLeft, Scissors, BarChart3, FileText, X } from 'lucide-react'
+import { toast } from 'sonner'
 import { useWebSocket } from '../../hooks/useWebSocket'
 import MessageBubble from './MessageBubble'
 import AgentIndicator from './AgentIndicator'
@@ -14,14 +15,12 @@ const ACTIONS = [
   { id: 'report', label: 'Full Report', desc: 'Comprehensive portfolio review', icon: FileText },
 ]
 
-export default function ChatWindow({ client, portfolioData }) {
+export default function ChatWindow({ client, portfolioData, onGeneratingChange }) {
   const { send, stop, messages, activeAgent, isConnected, suggestions, clearChat } = useWebSocket(client?.id)
   const { analysis } = portfolioData
   const [input, setInput] = useState('')
   const [activeAction, setActiveAction] = useState(null)
   const [actionsOpen, setActionsOpen] = useState(false)
-  const [undoRestore, setUndoRestore] = useState(null)
-  const undoTimerRef = useRef(null)
   const actionsRef = useRef(null)
   const bottomRef = useRef(null)
 
@@ -34,8 +33,6 @@ export default function ChatWindow({ client, portfolioData }) {
     setInput('')
     setActiveAction(null)
     setActionsOpen(false)
-    setUndoRestore(null)
-    clearTimeout(undoTimerRef.current)
   }, [client?.id])
 
   // Close actions menu on outside click
@@ -53,16 +50,10 @@ export default function ChatWindow({ client, portfolioData }) {
   const handleClearChat = useCallback(async () => {
     const restoreFn = await clearChat()
     if (!restoreFn) return
-    setUndoRestore(() => restoreFn)
-    clearTimeout(undoTimerRef.current)
-    undoTimerRef.current = setTimeout(() => setUndoRestore(null), 5000)
+    toast('Chat cleared', {
+      action: { label: 'Undo', onClick: restoreFn },
+    })
   }, [clearChat])
-
-  const handleUndo = useCallback(() => {
-    undoRestore?.()
-    setUndoRestore(null)
-    clearTimeout(undoTimerRef.current)
-  }, [undoRestore])
 
   function handleSend(text) {
     const msg = (text ?? input).trim()
@@ -78,78 +69,69 @@ export default function ChatWindow({ client, portfolioData }) {
 
   const isGenerating = !!activeAgent
 
+  useEffect(() => {
+    onGeneratingChange?.(isGenerating)
+  }, [isGenerating, onGeneratingChange])
+
   return (
-    <div className="flex flex-col h-full">
-      {/* Connection status + clear chat */}
-      <div className="flex items-center justify-between px-4 py-2 border-b border-gray-100 bg-gray-50/70 shrink-0">
+    <div className="flex flex-col h-full bg-transparent">
+      {/* Slim status + clear row */}
+      <div className="flex items-center justify-between px-6 py-3 shrink-0 border-b border-border/30">
         <div className="flex items-center gap-2">
           <span
-            className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-emerald-500' : 'bg-rose-400'}`}
+            className={`h-2 w-2 rounded-full transition-colors ${
+              isConnected ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]' : 'bg-rose-500 animate-pulse'
+            }`}
           />
-          <span className="text-xs font-medium text-gray-500">
-            {isConnected ? 'Connected' : 'Reconnecting\u2026'}
+          <span className="text-[11px] font-semibold tracking-wider text-muted uppercase">
+            {isConnected ? 'System Online' : 'Reconnecting...'}
           </span>
         </div>
         {messages.length > 0 && !isGenerating && (
           <button
             onClick={handleClearChat}
-            className="flex items-center gap-1 rounded-md px-2 py-1 text-[11px] text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
-            title="Clear chat history"
+            className="flex items-center gap-1.5 px-2 py-1 text-xs font-medium text-muted hover:text-white transition-colors"
           >
             <Trash2 size={12} />
-            Clear
+            Clear Chat
           </button>
         )}
       </div>
 
-      {/* Undo toast */}
-      {undoRestore && (
-        <div className="flex items-center justify-between px-4 py-2 bg-navy text-white text-xs shrink-0">
-          <span>Chat cleared</span>
-          <button
-            onClick={handleUndo}
-            className="flex items-center gap-1 rounded-md px-2 py-1 bg-white/20 hover:bg-white/30 transition-colors"
-          >
-            <Undo2 size={12} />
-            Undo
-          </button>
-        </div>
-      )}
-
       {messages.length === 0 && !activeAction ? (
-        /* Empty state */
         <div className="flex-1 flex flex-col items-center justify-center px-8 text-center overflow-y-auto">
-          <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-teal/15 to-teal/5 shadow-sm">
-            <MessageSquare size={24} className="text-teal" />
+          <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-panel border gap-2 border-border shadow-subtle group">
+            <MessageSquare size={26} className="text-white group-hover:scale-110 transition-transform" />
           </div>
-          <h3 className="mb-1.5 text-lg font-semibold text-navy">Chat with WealthAgent</h3>
-          <p className="mb-6 max-w-sm text-sm leading-relaxed text-gray-400">
-            Ask anything about {client?.name ?? 'your client'}&apos;s portfolio, performance, or
-            market conditions.
+          <h3 className="mb-2 font-display text-xl font-bold tracking-tight text-white">
+            How can I help you today?
+          </h3>
+          <p className="mb-8 max-w-sm text-sm leading-relaxed text-muted">
+            Ask about {client?.name ?? 'your client'}&apos;s portfolio execution, risk exposure, or run complex institutional analysis.
           </p>
-          <SuggestedPrompts persona={client?.persona} onSelect={handleSend} />
+          <div className="w-full">
+            <SuggestedPrompts persona={client?.persona} onSelect={handleSend} />
+          </div>
         </div>
       ) : (
         /* Chat area */
-        <div className="flex-1 relative min-h-0">
-          <div className="h-full overflow-y-auto">
-            <div className="px-4 py-3">
-              {messages.map((msg, i) => (
-                <MessageBubble
-                  key={i}
-                  role={msg.role}
-                  content={msg.content}
-                  streaming={msg.streaming}
-                  error={msg.error}
-                />
-              ))}
-              {activeAgent && (
-                <div className="mb-3 flex justify-start">
-                  <AgentIndicator agent={activeAgent} />
-                </div>
-              )}
-              <div ref={bottomRef} />
-            </div>
+        <div className="flex-1 relative min-h-0 bg-transparent">
+          <div className="h-full overflow-y-auto px-6 pt-4 pb-28">
+            {messages.map((msg, i) => (
+              <MessageBubble
+                key={i}
+                role={msg.role}
+                content={msg.content}
+                streaming={msg.streaming}
+                error={msg.error}
+              />
+            ))}
+            {activeAgent && (
+              <div className="mb-4 flex justify-start pl-12">
+                <AgentIndicator agent={activeAgent} />
+              </div>
+            )}
+            <div ref={bottomRef} className="h-4" />
           </div>
 
           {/* Action panel overlay */}
@@ -163,79 +145,53 @@ export default function ChatWindow({ client, portfolioData }) {
         </div>
       )}
 
-      {/* Input area */}
-      <div className="border-t border-gray-200 bg-white shrink-0">
-        {messages.length > 0 && !isGenerating && (
-          <SuggestedPrompts
-            persona={client?.persona}
-            onSelect={handleSend}
-            compact
-            dynamicSuggestions={suggestions}
-          />
-        )}
-        <div className="px-4 py-2.5">
-          <div className="flex items-center gap-2">
-            {/* Actions button + popover */}
-            <div className="relative" ref={actionsRef}>
-              <button
-                onClick={() => setActionsOpen((o) => !o)}
-                disabled={isGenerating}
-                className={`flex h-10 items-center gap-1.5 rounded-xl border px-3 text-xs font-semibold transition-all ${
-                  actionsOpen
-                    ? 'border-teal/40 bg-teal/10 text-teal'
-                    : 'border-gray-200 bg-gray-50 text-gray-500 hover:border-gray-300 hover:bg-gray-100 hover:text-gray-700'
-                } ${isGenerating ? 'cursor-not-allowed opacity-40' : ''}`}
-                title="AI Actions"
-              >
-                <Zap size={14} />
-                Actions
-              </button>
-
-              {/* Popover menu */}
-              {actionsOpen && (
-                <div className="absolute bottom-full left-0 mb-2 w-64 rounded-xl border border-gray-200 bg-white shadow-2xl overflow-hidden z-50 ring-1 ring-black/5">
-                  <div className="flex items-center justify-between px-3 py-2.5 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">AI Actions</span>
-                    <button onClick={() => setActionsOpen(false)} className="text-gray-400 hover:text-gray-600">
-                      <X size={12} />
+      {/* Input area - Floating Pill at Bottom */}
+      <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-[#111111] via-[#111111]/90 to-transparent pointer-events-none">
+        
+        <div className="mx-auto w-full max-w-4xl relative pointer-events-auto">
+          {/* Actions Popover (Triggered from + button in ChatInput) */}
+          {actionsOpen && (
+            <div className="absolute bottom-[110%] left-6 mb-2 w-64 bg-[#1C1C1E] border border-border rounded-2xl shadow-drawer overflow-hidden z-50 animate-slide-up origin-bottom-left">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-white/5">
+                <span className="text-xs font-bold uppercase tracking-widest text-white">AI Actions</span>
+                <button onClick={() => setActionsOpen(false)} className="text-muted hover:text-white transition-colors">
+                  <X size={14} />
+                </button>
+              </div>
+                <div className="py-2">
+                  {ACTIONS.map(({ id, label, desc, icon: Icon }) => (
+                    <button
+                      key={id}
+                      onClick={() => handleAction(id)}
+                      className="flex items-center gap-3 w-full px-4 py-3 text-left hover:bg-white/10 transition-colors"
+                    >
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-background border border-border text-white">
+                        <Icon size={14} />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-white">{label}</p>
+                        <p className="text-[11px] font-medium text-muted mt-0.5">{desc}</p>
+                      </div>
                     </button>
-                  </div>
-                  <div className="py-1">
-                    {ACTIONS.map(({ id, label, desc, icon: Icon }) => (
-                      <button
-                        key={id}
-                        onClick={() => handleAction(id)}
-                        className="flex items-center gap-3 w-full px-3 py-2.5 text-left hover:bg-gray-50 transition-colors group"
-                      >
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-teal/8 text-teal group-hover:bg-teal/15 transition-colors">
-                          <Icon size={15} />
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-sm font-medium text-gray-800">{label}</p>
-                          <p className="text-[11px] text-gray-400 leading-tight">{desc}</p>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
+                  ))}
                 </div>
-              )}
-            </div>
+              </div>
+            )}
 
-            {/* Chat input */}
-            <div className="flex-1">
-              <ChatInput
-                value={input}
-                onChange={setInput}
-                onSubmit={() => handleSend()}
-                onStop={stop}
-                disabled={!isConnected || isGenerating}
-                isGenerating={isGenerating}
-                placeholder={`Ask about ${client?.name ?? 'your client'}\u2026`}
-              />
-            </div>
-          </div>
+            {/* Chat input form */}
+          <ChatInput
+            value={input}
+            onChange={setInput}
+            onSubmit={() => handleSend()}
+            onStop={stop}
+            disabled={!isConnected || isGenerating}
+            isGenerating={isGenerating}
+            placeholder={`Ask anything about ${client?.name ?? 'client'}...`}
+            onActionClick={() => setActionsOpen((o) => !o)}
+          />
         </div>
       </div>
     </div>
   )
 }
+

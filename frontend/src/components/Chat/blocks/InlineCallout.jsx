@@ -2,28 +2,25 @@ import { Info, AlertTriangle, CheckCircle } from 'lucide-react'
 
 const STYLES = {
   info: {
-    bg: 'bg-blue-50',
-    border: 'border-blue-200',
+    container: 'bg-blue-500/[0.08] border-l-blue-500/50',
     icon: Info,
-    iconColor: 'text-blue-500',
-    title: 'text-blue-800',
-    text: 'text-blue-700',
+    iconColor: 'text-blue-400',
+    title: 'text-blue-400 font-semibold text-sm font-sans',
+    text: 'text-blue-300/80 text-sm font-sans',
   },
   warning: {
-    bg: 'bg-amber-50',
-    border: 'border-amber-200',
+    container: 'bg-amber-500/[0.08] border-l-amber-500/50',
     icon: AlertTriangle,
-    iconColor: 'text-amber-500',
-    title: 'text-amber-800',
-    text: 'text-amber-700',
+    iconColor: 'text-amber-400',
+    title: 'text-amber-400 font-semibold text-sm font-sans',
+    text: 'text-amber-300/80 text-sm font-sans',
   },
   success: {
-    bg: 'bg-green-50',
-    border: 'border-green-200',
+    container: 'bg-emerald-500/[0.08] border-l-emerald-500/50',
     icon: CheckCircle,
-    iconColor: 'text-green-500',
-    title: 'text-green-800',
-    text: 'text-green-700',
+    iconColor: 'text-emerald-400',
+    title: 'text-emerald-400 font-semibold text-sm font-sans',
+    text: 'text-emerald-300/80 text-sm font-sans',
   },
 }
 
@@ -34,13 +31,15 @@ export default function InlineCallout({ data }) {
   const Icon = scheme.icon
 
   return (
-    <div className={`my-2 flex gap-2.5 rounded-xl border px-3.5 py-2.5 ${scheme.bg} ${scheme.border}`}>
-      <Icon size={15} className={`shrink-0 mt-0.5 ${scheme.iconColor}`} />
-      <div className="min-w-0">
-        {data.title && (
-          <p className={`text-xs font-semibold ${scheme.title}`}>{data.title}</p>
-        )}
-        <p className={`text-xs leading-relaxed ${scheme.text}`}>{data.text}</p>
+    <div className={`rounded-xl border-l-4 p-3 my-3 ${scheme.container}`}>
+      <div className="flex gap-2.5">
+        <Icon size={18} className={`shrink-0 mt-0.5 ${scheme.iconColor}`} />
+        <div className="min-w-0">
+          {data.title && (
+            <p className={scheme.title}>{data.title}</p>
+          )}
+          <p className={`leading-relaxed ${scheme.text}`}>{data.text}</p>
+        </div>
       </div>
     </div>
   )

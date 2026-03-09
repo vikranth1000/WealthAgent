@@ -9,7 +9,7 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     """WealthAgent application settings."""
 
-    anthropic_api_key: str = ""
+    perplexity_api_key: str = ""
     database_url: str = "sqlite+aiosqlite:///./wealthagent.db"
     sqlite_fallback: bool = True
     news_api_key: str = ""

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { motion } from 'framer-motion'
 import { ChevronUp, ChevronDown } from 'lucide-react'
 
 const BASE_COLS = [
@@ -11,14 +12,11 @@ const ENHANCED_COLS = [
   { key: 'ticker', label: 'Ticker' },
   { key: 'shares', label: 'Shares' },
   { key: 'current_price', label: 'Price' },
+  { key: 'day_change_pct', label: '1D %' },
   { key: 'market_value', label: 'Value' },
   { key: 'unrealized_pnl', label: 'P&L' },
+  { key: 'pe_ratio', label: 'P/E' },
 ]
-
-function SortIcon({ active, dir }) {
-  if (!active) return <ChevronUp size={10} className="text-gray-300" />
-  return dir === 'asc' ? <ChevronDown size={10} className="text-teal" /> : <ChevronUp size={10} className="text-teal" />
-}
 
 function formatCell(key, value) {
   if (value == null) return '—'
@@ -29,42 +27,23 @@ function formatCell(key, value) {
     const prefix = value >= 0 ? '+' : ''
     return `${prefix}$${Math.round(value).toLocaleString()}`
   }
-  if (key === 'unrealized_pnl_pct') {
+  if (key === 'day_change_pct') {
     const prefix = value >= 0 ? '+' : ''
-    return `${prefix}${value.toFixed(1)}%`
+    return `${prefix}${value.toFixed(2)}%`
   }
+  if (key === 'pe_ratio' || key === 'dividend_yield') return value.toFixed(2)
   return String(value)
 }
 
-function cellColor(key, value) {
-  if (key === 'unrealized_pnl' || key === 'unrealized_pnl_pct') {
-    return value >= 0 ? 'text-green-600' : 'text-red-500'
-  }
-  return ''
-}
-
-// Props: holdings — array, enhanced — boolean (if true, data includes price/value/pnl)
 export default function HoldingsTable({ holdings = [], enhanced = false }) {
   const [sortKey, setSortKey] = useState('ticker')
   const [sortDir, setSortDir] = useState('asc')
 
-  if (!holdings.length) {
-    return (
-      <div className="text-gray-400 text-sm text-center py-4 rounded-xl bg-gray-50 border border-gray-200">
-        No holdings
-      </div>
-    )
-  }
-
   const COLS = enhanced ? ENHANCED_COLS : BASE_COLS
 
   function handleSort(key) {
-    if (sortKey === key) {
-      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
-    } else {
-      setSortKey(key)
-      setSortDir('asc')
-    }
+    if (sortKey === key) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
+    else { setSortKey(key); setSortDir('asc') }
   }
 
   const sorted = [...holdings].sort((a, b) => {
@@ -75,42 +54,71 @@ export default function HoldingsTable({ holdings = [], enhanced = false }) {
     return 0
   })
 
+  if (!holdings.length) {
+    return (
+      <div className="px-5 py-8 text-sm text-center font-medium text-muted">
+        No holdings found.
+      </div>
+    )
+  }
+
   return (
-    <div className="overflow-x-auto rounded-xl border border-gray-200">
-      <table className="w-full text-xs">
-        <thead className="bg-gradient-to-r from-gray-50 to-gray-100/50 border-b border-gray-200">
+    <div className="w-full h-full overflow-auto no-scrollbar">
+      <table className="w-full text-left border-collapse">
+        <thead className="sticky top-0 bg-background/90 backdrop-blur-xl z-20 shadow-sm border-b border-border/50">
           <tr>
             {COLS.map(({ key, label }) => (
               <th
                 key={key}
-                className="px-2 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-gray-400 cursor-pointer select-none hover:bg-gray-100 transition-colors"
+                className="px-4 py-3 text-xs font-semibold uppercase tracking-wider cursor-pointer select-none group transition-colors"
+                style={{ color: sortKey === key ? '#FFFFFF' : '#a1a1aa' }}
                 onClick={() => handleSort(key)}
               >
-                <span className="flex items-center gap-1">
+                <div className="flex items-center gap-1 group-hover:text-white transition-colors">
                   {label}
-                  <SortIcon active={sortKey === key} dir={sortDir} />
-                </span>
+                  {sortKey === key && (
+                    sortDir === 'asc' ? <ChevronUp size={12} strokeWidth={2.5} className="text-white" /> : <ChevronDown size={12} strokeWidth={2.5} className="text-white" />
+                  )}
+                </div>
               </th>
             ))}
           </tr>
         </thead>
         <tbody>
           {sorted.map((h, i) => (
-            <tr key={h.ticker || i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50/70'}>
+            <motion.tr
+              key={h.ticker || i}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: i * 0.05 }}
+              className="border-b border-border/30 hover:bg-white/5 transition-colors group cursor-default"
+            >
               {COLS.map(({ key }) => (
                 <td
                   key={key}
-                  className={`px-2 py-1.5 ${
-                    key === 'ticker' ? 'font-semibold text-navy' : `text-gray-600 ${cellColor(key, h[key])}`
-                  } ${key === 'unrealized_pnl' ? 'font-medium' : ''}`}
+                  className={`px-4 py-3 text-sm transition-colors ${
+                    key === 'ticker' || key === 'unrealized_pnl' || key === 'shares' || key === 'current_price' || key === 'market_value' ? 'font-mono' : 'font-sans font-medium text-muted group-hover:text-white/80'
+                  }`}
+                  style={
+                    key === 'ticker'
+                      ? { color: '#FFFFFF', fontWeight: 500 }
+                      : (key === 'unrealized_pnl' || key === 'day_change_pct') && h[key] != null
+                      ? { color: h[key] >= 0 ? '#10B981' : '#EF4444', fontWeight: 500 }
+                      : {}
+                  }
                 >
-                  {key === 'ticker' ? h.ticker : formatCell(key, h[key])}
+                  <span className={key === 'ticker' ? 'bg-white/10 px-2 py-1 rounded text-xs tracking-wide' : ''}>
+                    {formatCell(key, h[key])}
+                  </span>
                 </td>
               ))}
-            </tr>
+            </motion.tr>
           ))}
         </tbody>
       </table>
     </div>
   )
 }
+
+
+

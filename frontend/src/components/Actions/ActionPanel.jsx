@@ -61,25 +61,25 @@ export default function ActionPanel({ action, clientId, analysis, onClose, onSen
     <>
       {/* Backdrop */}
       <div
-        className="absolute inset-0 z-20 bg-gray-900/25 backdrop-blur-[3px]"
+        className="absolute inset-0 z-20 bg-black/40 backdrop-blur-[3px]"
         onClick={onClose}
       />
 
       {/* Floating panel */}
       <div className="absolute inset-x-4 top-4 z-30 max-h-[calc(100%-32px)] overflow-y-auto drop-shadow-xl">
         {loading && (
-          <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-lg">
+          <div className="rounded-xl border border-white/[0.08] bg-white/[0.05] p-5 shadow-glass backdrop-blur-md">
             <div className="flex items-center gap-3">
-              <div className="w-5 h-5 border-2 border-teal border-t-transparent rounded-full animate-spin" />
-              <span className="text-sm text-gray-500">Analyzing portfolio...</span>
+              <div className="w-5 h-5 border-2 border-[var(--persona-primary)] border-t-transparent rounded-full animate-spin" />
+              <span className="text-sm text-slate-400">Analyzing portfolio...</span>
             </div>
           </div>
         )}
 
         {error && (
-          <div className="rounded-xl border border-red-200 bg-red-50 p-4 shadow-lg">
-            <p className="text-sm text-red-600">{error}</p>
-            <button onClick={onClose} className="mt-2 text-xs font-medium text-red-400 hover:text-red-600">
+          <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-4 shadow-glass backdrop-blur-md">
+            <p className="text-sm text-red-400">{error}</p>
+            <button onClick={onClose} className="mt-2 text-xs font-medium text-red-400/70 hover:text-red-400">
               Dismiss
             </button>
           </div>

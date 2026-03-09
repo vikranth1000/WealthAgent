@@ -455,6 +455,9 @@ async def get_holdings_detail(
             market_value=round(market_value, 2),
             unrealized_pnl=round(pnl, 2),
             unrealized_pnl_pct=round(pnl_pct, 2),
+            day_change_pct=h.day_change_pct,
+            pe_ratio=h.pe_ratio,
+            dividend_yield=h.dividend_yield,
             asset_class=h.asset_class,
             sector=h.sector,
         ))

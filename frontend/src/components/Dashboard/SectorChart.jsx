@@ -1,13 +1,9 @@
 import { useMemo } from 'react'
-import { BarChart, Bar, XAxis, YAxis, Tooltip, LabelList, ResponsiveContainer } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, Tooltip, LabelList, CartesianGrid, ResponsiveContainer } from 'recharts'
 import { useAnimatedObject } from '../../hooks/useAnimatedValue'
 
-// Props: data — object like { "Technology": 0.45, "Fixed Income": 0.3, ... }
 export default function SectorChart({ data }) {
-  const animated = useAnimatedObject(data, 700)
-
-  // Only include rows present in the target data so ghost sectors
-  // don't linger in the Y-axis while they animate out.
+  const animated = useAnimatedObject(data, 400)
   const targetKeys = useMemo(() => new Set(data ? Object.keys(data) : []), [data])
 
   const chartData = useMemo(() => {
@@ -16,38 +12,61 @@ export default function SectorChart({ data }) {
       .filter(([name, value]) => value > 0.001 && targetKeys.has(name))
       .map(([name, value]) => ({ name, value: parseFloat((value * 100).toFixed(1)) }))
       .sort((a, b) => (data[b.name] ?? 0) - (data[a.name] ?? 0))
-  }, [animated, targetKeys])
+  }, [animated, targetKeys, data])
 
   if (!data || Object.keys(data).length === 0) {
     return (
-      <div className="h-40 flex items-center justify-center text-gray-400 text-sm">
-        No sector data
+      <div className="h-full flex items-center justify-center text-sm text-muted font-medium">
+        No sector data available.
       </div>
     )
   }
 
-  // Base height on target data so the chart doesn't resize mid-animation
-  const height = Math.max(80, Object.keys(data).length * 28 + 16)
+  const height = Math.max(80, Object.keys(data).length * 40 + 20)
 
   return (
     <ResponsiveContainer width="100%" height={height}>
       <BarChart
         data={chartData}
         layout="vertical"
-        margin={{ top: 0, right: 44, left: 0, bottom: 0 }}
+        margin={{ top: 8, right: 48, left: 4, bottom: 8 }}
       >
+        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" horizontal={false} />
         <XAxis type="number" hide />
-        <YAxis type="category" dataKey="name" width={96} tick={{ fontSize: 11 }} />
-        <Tooltip formatter={(v) => `${v.toFixed(1)}%`} />
-        <Bar dataKey="value" fill="#0D9488" radius={[0, 3, 3, 0]} isAnimationActive={false}>
+        <YAxis
+          type="category"
+          dataKey="name"
+          width={100}
+          tick={{ fill: '#a1a1aa', fontSize: 11, fontFamily: 'Inter, sans-serif', fontWeight: 500 }}
+          axisLine={false}
+          tickLine={false}
+        />
+        <Tooltip
+          formatter={(v) => `${v.toFixed(1)}%`}
+          contentStyle={{
+            background: '#101010',
+            border: '1px solid #2A2A2A',
+            borderRadius: '8px',
+            color: '#ffffff',
+            fontSize: '13px',
+            fontWeight: 500,
+            boxShadow: '0 4px 20px -2px rgba(0, 0, 0, 0.5)',
+            fontFamily: 'Inter, sans-serif',
+            padding: '8px 12px'
+          }}
+          cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+        />
+        <Bar dataKey="value" fill="#FFFFFF" radius={[0, 2, 2, 0]} isAnimationActive={true} animationDuration={1000} barSize={12}>
           <LabelList
             dataKey="value"
             position="right"
             formatter={(v) => `${v.toFixed(1)}%`}
-            style={{ fontSize: 11, fill: '#6B7280' }}
+            style={{ fontSize: 11, fill: '#FFFFFF', fontFamily: '"SF Mono", monospace', fontWeight: 500 }}
           />
         </Bar>
       </BarChart>
     </ResponsiveContainer>
   )
 }
+
+

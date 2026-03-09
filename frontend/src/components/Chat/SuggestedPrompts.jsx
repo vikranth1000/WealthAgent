@@ -25,28 +25,22 @@ const PROMPTS = {
   ],
 }
 
-// Props: persona (string), onSelect (fn), compact (bool), dynamicSuggestions (string[])
-export default function SuggestedPrompts({ persona, onSelect, compact, dynamicSuggestions }) {
-  // Use dynamic suggestions if available, otherwise fall back to static persona prompts
-  const prompts = (dynamicSuggestions && dynamicSuggestions.length > 0)
-    ? dynamicSuggestions
-    : (PROMPTS[persona] ?? [])
+export default function SuggestedPrompts({ persona, onSelect, dynamicSuggestions }) {
+  const prompts =
+    dynamicSuggestions && dynamicSuggestions.length > 0
+      ? dynamicSuggestions
+      : PROMPTS[persona] ?? []
 
   if (!prompts.length) return null
 
-  const isDynamic = dynamicSuggestions && dynamicSuggestions.length > 0
-
   return (
-    <div className={`flex flex-wrap gap-2 px-4 ${compact ? 'pt-2 pb-1.5' : 'py-3'}`}>
+    <div className="flex flex-wrap justify-center gap-2 px-3 py-2 shrink-0">
       {prompts.map((prompt) => (
         <button
           key={prompt}
+          type="button"
           onClick={() => onSelect?.(prompt)}
-          className={`rounded-lg border transition-all active:scale-95 shadow-sm ${
-            isDynamic
-              ? 'border-teal/30 bg-teal/5 text-teal hover:border-teal/50 hover:bg-teal/10 hover:shadow-md'
-              : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50 hover:shadow-md'
-          } ${compact ? 'px-2.5 py-1 text-xs' : 'px-3 py-1.5 text-xs'}`}
+          className="text-xs px-3 py-1.5 font-medium border border-border text-muted bg-panel hover:bg-white hover:text-black transition-colors rounded-full shadow-sm"
         >
           {prompt}
         </button>
@@ -54,3 +48,4 @@ export default function SuggestedPrompts({ persona, onSelect, compact, dynamicSu
     </div>
   )
 }
+

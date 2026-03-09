@@ -53,6 +53,14 @@ class Holding(Base):
     purchase_date: Mapped[str] = mapped_column(String(10), nullable=False)  # ISO date string
     asset_class: Mapped[str] = mapped_column(String(50), nullable=False)
     sector: Mapped[str] = mapped_column(String(100), nullable=False)
+    
+    # Enhanced Portfolio Data
+    current_price: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    market_value: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    unrealized_pnl: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    day_change_pct: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    pe_ratio: Mapped[float] = mapped_column(Float, nullable=True)
+    dividend_yield: Mapped[float] = mapped_column(Float, nullable=True)
 
     portfolio: Mapped["Portfolio"] = relationship("Portfolio", back_populates="holdings")
 

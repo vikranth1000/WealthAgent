@@ -22,7 +22,7 @@ import json
 import logging
 from typing import AsyncGenerator
 
-import anthropic
+import openai
 
 from agents.state import ClientReport, WealthAgentState
 from config import settings
@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 # Constants
 # ---------------------------------------------------------------------------
 
-_MODEL = "claude-sonnet-4-20250514"
+_MODEL = "sonar-pro"
 _MAX_TOKENS = 2048
 _CALL_TIMEOUT = 30.0        # seconds before a single LLM call is timed out
 _TIMEOUT_RETRY_DELAY = 5.0  # seconds to wait before retrying after a timeout
@@ -157,13 +157,16 @@ def format_portfolio_for_llm(analysis: dict) -> str:
 # ---------------------------------------------------------------------------
 
 
-def _make_client() -> anthropic.AsyncAnthropic:
-    """Instantiate an AsyncAnthropic client from settings.
+def _make_client() -> openai.AsyncOpenAI:
+    """Instantiate an AsyncOpenAI client targeting Perplexity via settings.
 
     Returns:
-        A configured ``AsyncAnthropic`` instance.
+        A configured ``AsyncOpenAI`` instance.
     """
-    return anthropic.AsyncAnthropic(api_key=settings.anthropic_api_key)
+    return openai.AsyncOpenAI(
+        api_key=settings.perplexity_api_key,
+        base_url="https://api.perplexity.ai"
+    )
 
 
 def _build_prompts(state: WealthAgentState) -> tuple[str, str]:
@@ -209,14 +212,14 @@ def _build_prompts(state: WealthAgentState) -> tuple[str, str]:
 
 
 async def _call_api(
-    client: anthropic.AsyncAnthropic,
+    client: openai.AsyncOpenAI,
     system_prompt: str,
     user_prompt: str,
 ) -> str:
-    """Make a single, timeout-guarded call to the Anthropic Messages API.
+    """Make a single, timeout-guarded call to the Perplexity Chat Completions API.
 
     Args:
-        client: An ``AsyncAnthropic`` SDK instance.
+        client: An ``AsyncOpenAI`` SDK instance.
         system_prompt: The system turn content.
         user_prompt: The user turn content.
 
@@ -226,22 +229,24 @@ async def _call_api(
     Raises:
         asyncio.TimeoutError: If the call does not complete within
             ``_CALL_TIMEOUT`` seconds.
-        anthropic.RateLimitError: Propagated from the SDK on HTTP 429.
+        openai.RateLimitError: Propagated from the SDK on HTTP 429.
     """
     response = await asyncio.wait_for(
-        client.messages.create(
+        client.chat.completions.create(
             model=_MODEL,
             max_tokens=_MAX_TOKENS,
-            system=system_prompt,
-            messages=[{"role": "user", "content": user_prompt}],
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
         ),
         timeout=_CALL_TIMEOUT,
     )
-    return response.content[0].text
+    return response.choices[0].message.content or ""
 
 
 async def _call_with_backoff(
-    client: anthropic.AsyncAnthropic,
+    client: openai.AsyncOpenAI,
     system_prompt: str,
     user_prompt: str,
 ) -> str:
@@ -253,7 +258,7 @@ async def _call_with_backoff(
     the exception is re-raised.
 
     Args:
-        client: An ``AsyncAnthropic`` SDK instance.
+        client: An ``AsyncOpenAI`` SDK instance.
         system_prompt: The system turn content.
         user_prompt: The user turn content.
 
@@ -261,13 +266,13 @@ async def _call_with_backoff(
         Response text from the model.
 
     Raises:
-        anthropic.RateLimitError: After all backoff attempts are exhausted.
+        openai.RateLimitError: After all backoff attempts are exhausted.
         asyncio.TimeoutError: Propagated from ``_call_api`` (not caught here).
     """
     for delay in _RATE_LIMIT_DELAYS:
         try:
             return await _call_api(client, system_prompt, user_prompt)
-        except anthropic.RateLimitError:
+        except openai.RateLimitError:
             logger.warning(
                 "comms_agent: rate limit hit — backing off %.0f s", delay
             )
@@ -276,7 +281,7 @@ async def _call_with_backoff(
     # Final attempt after all backoff delays are exhausted.
     try:
         return await _call_api(client, system_prompt, user_prompt)
-    except anthropic.RateLimitError:
+    except openai.RateLimitError:
         logger.error("comms_agent: rate limit not resolved after all backoffs")
         raise
 
@@ -402,7 +407,7 @@ async def comms_agent_node(state: WealthAgentState) -> dict:
 async def comms_agent_stream(
     state: WealthAgentState,
 ) -> AsyncGenerator[str, None]:
-    """Streaming variant — yields token chunks from the Anthropic stream API.
+    """Streaming variant — yields token chunks from the Perplexity stream API.
 
     Intended for use by the WebSocket endpoint to push real-time tokens to the
     browser.  Yields ``FALLBACK_MESSAGE`` as a single chunk on any error so
@@ -424,15 +429,19 @@ async def comms_agent_stream(
     client = _make_client()
 
     try:
-        async with client.messages.stream(
+        response = await client.chat.completions.create(
             model=_MODEL,
             max_tokens=_MAX_TOKENS,
-            system=system_prompt,
-            messages=[{"role": "user", "content": user_prompt}],
-        ) as stream:
-            async for chunk in stream.text_stream:
-                yield chunk
-    except anthropic.RateLimitError as exc:
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            stream=True
+        )
+        async for chunk in response:
+            if chunk.choices and chunk.choices[0].delta.content:
+                yield chunk.choices[0].delta.content
+    except openai.RateLimitError as exc:
         logger.error("comms_agent_stream: rate limit error: %s", exc)
         yield FALLBACK_MESSAGE
     except asyncio.TimeoutError as exc:
@@ -490,18 +499,21 @@ async def generate_follow_up_suggestions(
 
     try:
         response = await asyncio.wait_for(
-            client.messages.create(
+            client.chat.completions.create(
                 model=_MODEL,
                 max_tokens=150,
-                system=_SUGGESTIONS_SYSTEM,
-                messages=[{"role": "user", "content": user_msg}],
+                messages=[
+                    {"role": "system", "content": _SUGGESTIONS_SYSTEM},
+                    {"role": "user", "content": user_msg}
+                ],
             ),
             timeout=10.0,
         )
-        text = response.content[0].text.strip()
-        suggestions = json.loads(text)
-        if isinstance(suggestions, list) and len(suggestions) >= 3:
-            return [str(s) for s in suggestions[:3]]
+        text = response.choices[0].message.content.strip() if response.choices and response.choices[0].message.content else ""
+        suggestions = json.loads(text) if text else []
+        if isinstance(suggestions, list):
+            valid_sugs = [str(s) for s in suggestions]
+            return valid_sugs[:3] if len(valid_sugs) >= 3 else valid_sugs
         return []
     except Exception as exc:
         logger.warning("generate_follow_up_suggestions: failed: %s", exc)

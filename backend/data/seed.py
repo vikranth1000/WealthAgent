@@ -199,7 +199,16 @@ async def seed_database(db: AsyncSession) -> None:
         )
         db.add(portfolio)
 
+        import random
         for h in entry["holdings"]:
+            # Generate mock live financial data for the UI
+            price = round(random.uniform(50.0, 500.0), 2)
+            market_value = round(price * h["shares"], 2)
+            unrealized_pnl = round(market_value - (h["cost_basis"] * h["shares"]), 2)
+            day_change = round(random.uniform(-5.0, 5.0), 2)
+            pe = round(random.uniform(10.0, 40.0), 2) if "Equity" in h["asset_class"] else None
+            div = round(random.uniform(1.0, 5.0), 2) if "Equity" in h["asset_class"] else None
+
             holding = Holding(
                 id=str(uuid.uuid4()),
                 portfolio_id=portfolio.id,
@@ -209,6 +218,12 @@ async def seed_database(db: AsyncSession) -> None:
                 purchase_date=h["purchase_date"],
                 asset_class=h["asset_class"],
                 sector=h["sector"],
+                current_price=price,
+                market_value=market_value,
+                unrealized_pnl=unrealized_pnl,
+                day_change_pct=day_change,
+                pe_ratio=pe,
+                dividend_yield=div,
             )
             db.add(holding)
 
